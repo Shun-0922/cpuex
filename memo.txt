@@ -1,10 +1,10 @@
 cd ../../../../Desktop/cpuex
 xvlog --sv test.v alu.v decoder.v registerfile.v controlunit.v other_modules.v memory.v core.v uart_rx.sv uart_tx.sv uart.v io.v
-xelab -debug typical test_io -s test_io.sim
-xsim -runall test_io.sim
+xelab -debug typical test_core -s test_core.sim
+xsim -runall test_core.sim
 
 cd Desktop/cpuex-v1.4/server
-py server.py COM8
+py server.py COM8 -p=test.bin
 
 SAに関して
  https://msyksphinz-self.github.io/riscv-isadoc/html/index.html

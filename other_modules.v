@@ -6,6 +6,7 @@ module programcounter
     input wire branchtrue,
     input wire [31:0] pc_ex,
     input wire pcwrite,
+    input wire core_start,
     output wire [31:0] pc_if
   );
   reg [31:0] pc;
@@ -16,7 +17,7 @@ module programcounter
   assign next_pc = branchtrue ? pc_branch : pc + 32'd4;
   assign pc_if = pc;
   always @(posedge clk) begin
-    if (~rstn) begin
+    if (~rstn || ~core_start) begin
       pc <= 32'b0;
     end else if (pcwrite) begin
       pc <= pc;
