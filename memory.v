@@ -9,51 +9,21 @@ module instruction_ram
     input wire [31:0] addr_in_instr,
     input wire [31:0] pc_if,
     input wire port_en_1_instr,
-    output wire [31:0] instruction_if
+    output wire [31:0] instruction_if,
+    output wire [31:0] output_instruction_ram
   );
   parameter WIDTH = 32,LOGWIDTH = 5;
 
   reg [31:0] ram [0:WIDTH - 1];
+  assign output_instruction_ram = ram[0];
 
   integer i;
 
   always @(posedge clk) begin
     if (~rstn) begin
-      /*for (i = 0; i < WIDTH; i = i + 1) begin
+      for (i = 0; i < WIDTH; i = i + 1) begin
         ram[i] <= 32'b0;
-      end*/
-      ram[0] <=  32'b0000000_00001_00000_000_00001_0010011;  //  00100093     addi x1,   zero, 1
-      ram[1] <=  32'b0000000_00001_00000_000_00010_0010011;  //  00100113     addi x2,   zero, 1
-      ram[2] <=  32'b0000000_00010_00000_000_00100_0010011;  //  00200223     addi x4,   zero, 2
-      ram[3] <=  32'b0000000_01010_00000_000_00101_0010011;  //  00a00293     addi x5,   zero, 10
-      ram[4] <=  32'b0000000_00000_00000_000_00111_0010011;  //  00000393     addi x7,   zero, 0
-      ram[5] <=  32'b0000000_00001_00111_010_00000_0100011;  //  0070a023     sw   x1,   0(x7)
-      ram[6] <=  32'b0000000_00100_00111_000_00111_0010011;  //  00438393     addi x7,   x7,   4
-      ram[7] <=  32'b0000000_00010_00111_010_00000_0100011;  //  00712023     sw   x2,   0(x7)
-      ram[8] <=  32'b0000000_00100_00111_000_00111_0010011;  //  00438393     addi x7,   x7,   4                LABEL2
-      ram[9] <=  32'b0000000_00010_00001_000_00011_0110011;  //  002081b3     add  x3,   x1,   x2
-      ram[10] <= 32'b0000000_00011_00111_010_00000_0100011;  //  0071a023     sw   x3,   0(x7)
-      ram[11] <= 32'b0000000_00000_00010_000_00001_0010011;  //  00010093     addi x1,   x2,   0
-      ram[12] <= 32'b0000000_00000_00011_000_00010_0010011;  //  00018113     addi x2,   x3,   0
-      ram[13] <= 32'b0000000_00001_00100_000_00100_0010011;  //  00120213     addi x4,   x4,   1
-      ram[14] <= 32'b0000000_00101_00100_000_01000_1100011;  //  00520263     beq  x4,   x5,   LABEL1 (= 64 (+ 8))
-      ram[15] <= 32'b1111111_00000_00000_000_00101_1100011;  //  fe0002e3     beq  zero, zero, LABEL2 (= 32 (- 28))
-      ram[16] <= 32'b0000000_00000_00111_010_00110_0000011;  //  0003a303     lw   x6,   0(x7)                  LABEL1
-      ram[17] <= 32'b0000000_00001_00100_000_00100_0010011;  //  00120213     addi x4,   x4,   1                LABEL3
-      ram[18] <= 32'b1111111_00000_00000_000_11101_1100011;  //  fe000ee3     beq  zero, zero, LABEL3 (= 68 (- 4))                    
-      ram[19] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[20] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[21] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[22] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[23] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[24] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[25] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[26] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[27] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[28] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[29] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[30] <= 32'b0000000_00000_00000_000_00000_0000000;
-      ram[31] <= 32'b0000000_00000_00000_000_00000_0000000;
+      end
     end else if (wr_en_instr == 1'b1) begin
       ram[addr_in_instr[LOGWIDTH + 1:2]] <= data_in_instr;
     end
@@ -64,20 +34,57 @@ module instruction_ram
 endmodule
 
 
+module data_ram_wrap
+  (
+    input wire clk,
+    input wire rstn,
+    input wire memwrite_mem,
+    input wire memwrite_io,
+    input wire [31:0] write_data_memory_mem,
+    input wire [31:0] write_data_io,
+    input wire [31:0] alu_result_mem,
+    input wire [31:0] addr_io,
+    input wire memread_mem,
+    input wire memread_io,
+    output wire [31:0] data_from_memory_mem,
+    output wire [31:0] data_from_memory_io
+  );
+  wire memwrite;
+  wire [31:0] write_data_memory;
+  wire [31:0] addr_in;
+  wire memread;
+  wire [31:0] data_from_memory;
+  data_ram _data_ram
+  (
+    .clk(clk),
+    .rstn(rstn),
+    .memwrite(memwrite),
+    .write_data_memory(write_data_memory),
+    .addr_in(addr_in),
+    .memread(memread),
+    .data_from_memory(data_from_memory)
+  );
+  assign memwrite = memwrite_mem || memwrite_io;
+  assign write_data_memory = memwrite_mem == 1'b1 ? write_data_memory_mem : write_data_io;
+  assign addr_in = (memwrite_mem == 1'b1 || memread_mem == 1'b1) ? alu_result_mem : addr_io;
+  assign memread = memread_mem || memread_io;
+  assign data_from_memory_mem = data_from_memory;
+  assign data_from_memory_io = data_from_memory;
 
+endmodule
 
 module data_ram 
   (
     input wire clk,
     input wire rstn,
-    input wire memwrite_mem,
-    input wire [31:0] write_data_memory_mem,
-    input wire [31:0] alu_result_mem,
-    input wire memread_mem,
-    output wire [31:0] data_from_memory_mem
+    input wire memwrite,
+    input wire [31:0] write_data_memory,
+    input wire [31:0] addr_in,
+    input wire memread,
+    output wire [31:0] data_from_memory
   );
   
-  parameter WIDTH = 32,LOGWIDTH = 5;
+  parameter WIDTH = 256,LOGWIDTH = 8;
   reg [31:0] ram [0:WIDTH - 1];
 
   integer i;
@@ -87,12 +94,12 @@ module data_ram
       for (i = 0; i < WIDTH; i = i + 1) begin
         ram[i] <= 32'b0;
       end
-    end else if (memwrite_mem == 1'b1) begin
-      ram[alu_result_mem[LOGWIDTH + 1:2]] <= write_data_memory_mem;
+    end else if (memwrite == 1'b1) begin
+      ram[addr_in[LOGWIDTH + 1:2]] <= write_data_memory;
     end
   end
 
-  assign data_from_memory_mem = memread_mem ? ram[alu_result_mem[LOGWIDTH + 1:2]] : 32'b0;
+  assign data_from_memory = memread ? ram[addr_in[LOGWIDTH + 1:2]] : 32'b0;
 
 endmodule
 

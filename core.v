@@ -1,7 +1,9 @@
 module core(
+    input wire rxd,
     input wire clk,
     input wire rstn,
-    output wire [31:0] output_register
+    output wire txd,
+    output wire [31:0] outputs
 );
 
 
@@ -10,6 +12,7 @@ wire alusrc_ex;
 wire branch_id;
 wire branch_ex;
 wire branchtrue;
+wire core_end;
 wire core_start;
 wire if_flush;
 wire ifidwrite;
@@ -74,6 +77,9 @@ wire [31:0] imm_id;
 wire [31:0] imm_ex;
 wire [31:0] instruction_if;
 wire [31:0] instruction_id;
+wire [31:0] output_register;
+wire [31:0] output_instruction_ram;
+wire [31:0] output_io;
 wire [31:0] pc_if;
 wire [31:0] pc_id;
 wire [31:0] pc_ex;
@@ -88,11 +94,10 @@ wire [31:0] write_data_memory_ex;
 wire [31:0] write_data_memory_mem;
 wire [31:0] write_data_register_wb;
 
-assign wr_en_instr = 1'b0;
-assign data_in_instr = 32'b0;
-assign addr_in_instr = 32'b0;
+assign outputs = {16'b0,output_register[15:0]};
 assign port_en_1_instr = 1'b1;
 
+// multiplexers etc. out of module
 assign write_data_register_wb = (memtoreg_wb == 1'b1) ? data_from_memory_wb : alu_result_wb;
 assign branchtrue = branch_ex & zero;
 assign src_b = (alusrc_ex == 1'b1) ? imm_ex : write_data_memory_ex;
@@ -101,6 +106,25 @@ assign write_data_memory_ex = (forward_b == 2'b00) ? read_data2_ex :
 assign src_a = (forward_a == 2'b00) ? read_data1_ex :
                (forward_a == 2'b10) ? alu_result_mem : write_data_register_wb;
 assign control_signal = (nop_insert == 1'b1) ? 8'b0 : controlunit_out;
+
+io _io
+  (
+    .rxd(rxd),
+    .txd(txd),
+    .clk(clk),
+    .rstn(rstn),
+    .data_from_memory_io(data_from_memory_io),
+    .core_end(core_end),
+    .wr_en_instr(wr_en_instr),
+    .data_in_instr(data_in_instr),
+    .addr_in_instr(addr_in_instr),
+    .addr_io(addr_io),
+    .write_data_io(write_data_io),
+    .memread_io(memread_io),
+    .memwrite_io(memwrite_io),
+    .core_start(core_start),
+    .output_io(output_io)
+  );
 
 alu _alu
   (
@@ -157,18 +181,24 @@ instruction_ram  _instruction_ram
     .addr_in_instr(addr_in_instr),
     .pc_if(pc_if),
     .port_en_1_instr(port_en_1_instr),
-    .instruction_if(instruction_if)
+    .instruction_if(instruction_if),
+    .output_instruction_ram(output_instruction_ram)
   );
 
-data_ram _data_ram
+data_ram_wrap _data_ram_wrap
   (
     .clk(clk),
     .rstn(rstn),
     .memwrite_mem(memwrite_mem),
+    .memwrite_io(memwrite_io),
     .write_data_memory_mem(write_data_memory_mem),
+    .write_data_io(write_data_io),
     .alu_result_mem(alu_result_mem),
+    .addr_io(addr_io),
     .memread_mem(memread_mem),
-    .data_from_memory_mem(data_from_memory_mem)
+    .memread_io(memread_io),
+    .data_from_memory_mem(data_from_memory_mem),
+    .data_from_memory_io(data_from_memory_io)
   );
 
 programcounter _programcounter
@@ -180,6 +210,7 @@ programcounter _programcounter
     .pc_ex(pc_ex),
     .pcwrite(pcwrite),
     .core_start(core_start),
+    .core_end(core_end),
     .pc_if(pc_if)
   );
 

@@ -7,22 +7,29 @@ module programcounter
     input wire [31:0] pc_ex,
     input wire pcwrite,
     input wire core_start,
+    output wire core_end,
     output wire [31:0] pc_if
   );
   reg [31:0] pc;
+  reg core_end_reg;
   
   wire [31:0] next_pc;
   wire [31:0] pc_branch;
   assign pc_branch = $signed(pc_ex) + $signed(imm_ex << 1);
   assign next_pc = branchtrue ? pc_branch : pc + 32'd4;
   assign pc_if = pc;
+  assign core_end = core_end_reg;
   always @(posedge clk) begin
     if (~rstn || ~core_start) begin
       pc <= 32'b0;
+      core_end_reg <= 1'b0;
     end else if (pcwrite) begin
       pc <= pc;
     end else begin
       pc <= next_pc;
+      if (pc == 32'd44) begin
+        core_end_reg <= 1'b1;
+      end
     end
   end
 
