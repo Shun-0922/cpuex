@@ -345,7 +345,7 @@ module io_computer_side #(CLK_PER_HALF_BIT = 100)
   reg [31:0] program_buffer;
 
   initial begin
-    $readmemb("fib.mem", ram);
+    $readmemb("increment.mem", ram);
   end
 
   always @(posedge clk) begin
