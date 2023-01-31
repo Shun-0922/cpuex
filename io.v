@@ -2,22 +2,23 @@
 
 
 
-module io #(CLK_PER_HALF_BIT = 217) 
+module io #(CLK_PER_HALF_BIT = 100) 
   (
     input wire rxd,
     output wire txd,
     input wire clk,
     input wire rstn,
-    input wire [31:0] data_from_memory_io,  //from data ram
-    input wire core_end,                    //from pc
-    output wire wr_en_instr,                //to instruction ram
-    output wire [31:0] data_in_instr,       //to instruction ram
-    output wire [31:0] addr_in_instr,       //to instruction ram
-    output wire [31:0] addr_io,             //to data ram
-    output wire [31:0] write_data_io,       //to data ram
-    output wire memread_io,                 //to data ram
-    output wire memwrite_io,                //to data ram
-    output wire core_start,                 //to pc
+    input wire data_ready_io,
+    input wire [31:0] data_from_memory_io,  
+    input wire core_end,                    
+    output wire wr_en_instr,                
+    output wire [31:0] data_in_instr,       
+    output wire [31:0] addr_in_instr,       
+    output wire [31:0] addr_io,             
+    output wire [31:0] write_data_io,       
+    output wire memread_io,                 
+    output wire memwrite_io,                
+    output wire core_start,                 
     output wire [31:0] output_io
   );
 
@@ -38,7 +39,7 @@ module io #(CLK_PER_HALF_BIT = 217)
   assign memread_io = memread_io_reg;
 
 
-  reg [15:0] status;
+  reg [15:0] status;         //status of finite state machine
   reg [31:0] counter;
 
   
@@ -52,8 +53,8 @@ module io #(CLK_PER_HALF_BIT = 217)
   wire [7:0] space;         assign space = 8'h20;
   wire [7:0] newline;       assign newline = 8'h0a;
   
-  wire [31:0] base_address;  //indicates where the output is on the memory
-  reg [31:0] rgb_pixel;
+  wire [31:0] base_address;  //indicates where the output is on the memory: should be changed to a register when implementing io of sld file
+  reg [31:0] rgb_pixel;           //may be changed to r_pixel, g_pixel, b_pixel
   reg [7:0] red;
   reg [7:0] red_100;
   reg [7:0] red_10;
@@ -66,23 +67,23 @@ module io #(CLK_PER_HALF_BIT = 217)
   reg [7:0] blue_100;
   reg [7:0] blue_10;
   reg [7:0] blue_1;
-  wire [7:0]  pixel_100;
-  wire [7:0]  pixel_10;
-  wire [7:0]  pixel_1;
+  wire [7:0]  pixel_100;                                       //pixel width/100
+  wire [7:0]  pixel_10;                                        //pixel width%100/10
+  wire [7:0]  pixel_1;                                         //pixel width%10
   wire [31:0] pixels;        //how many pixels
-  assign base_address = 32'b0;
-  assign pixel_100 = 8'd0;
-  assign pixel_10  = 8'd1;
-  assign pixel_1   = 8'd6;
-  assign pixels    = 32'd256;
+  assign base_address = 32'b0;                                             
+  assign pixel_100 = 8'd1;                                                 
+  assign pixel_10  = 8'd2;                                                 
+  assign pixel_1   = 8'd8;                                                 
+  assign pixels    = 32'd16384; 
   
   reg [31:0] output_io_reg;
   assign output_io = input_program;
 
-  assign program_words = {2'b00,program_bytes[31:2]};
-  assign addr_in_instr = {counter[29:0] - 30'd1,2'b00};
-  assign data_in_instr = input_program;
-  assign addr_io = base_address + {counter[29:0],2'b00};
+  assign program_words = {2'b00,program_bytes[31:2]};                      //How many words there are in the program
+  assign addr_in_instr = {counter[29:0] - 30'd1,2'b00};                    //address of instruction memory
+  assign data_in_instr = input_program;                                    //data sent to the instruction memory
+  assign addr_io = base_address + {counter[29:0],2'b00};                   //address of data memory
   assign memwrite_io = 1'b0;
   assign write_data_io = 32'b0;
   
@@ -184,13 +185,21 @@ module io #(CLK_PER_HALF_BIT = 217)
       end else if (status == 16'd4192) begin sdata <= number_0 + 8'd2;      status <= status + 16'd1; //send color range
       end else if (status == 16'd4208) begin sdata <= number_0 + 8'd5;      status <= status + 16'd1;
       end else if (status == 16'd4224) begin sdata <= number_0 + 8'd5;      status <= status + 16'd1;
-      end else if (status == 16'd4240) begin sdata <= newline;              status <= status + 16'd1;  memread_io_reg <= 1'b1;  //start reading from memory
-      end else if (status == 16'd4256) begin  //read from memory
-        rgb_pixel <= data_from_memory_io;
-        red <= data_from_memory_io[7:0];
-        green <= data_from_memory_io[15:8];
-        blue <= data_from_memory_io[23:16];
-        status <= status + 16'd16;
+      end else if (status == 16'd4240) begin sdata <= newline;              status <= status + 16'd1;  
+      end else if (status == 16'd4256) begin 
+        memread_io_reg <= 1'b1;  //start reading from memory
+        status <= status + 16'd14;
+      end else if (status == 16'd4270) begin
+        memread_io_reg <= 1'b0;
+        status <= status + 16'b1;
+      end else if (status == 16'd4271) begin
+        if (data_ready_io) begin
+          rgb_pixel <= data_from_memory_io;
+          red <= data_from_memory_io[7:0];
+          green <= data_from_memory_io[15:8];
+          blue <= data_from_memory_io[23:16];
+          status <= status + 16'd1;
+        end 
       end else if (status == 16'd4272) begin //calculate color data1
         if (red < 8'd100) begin red_100 <= 8'd0;
         end else if (red < 8'd200) begin red_100 <= 8'd1; red <= red - 8'd100;
@@ -302,7 +311,7 @@ endmodule
 
 
 //module to simulate io
-module io_computer_side #(CLK_PER_HALF_BIT = 217) 
+module io_computer_side #(CLK_PER_HALF_BIT = 100) 
   (
     input wire rxd,
     output wire txd,
@@ -335,41 +344,44 @@ module io_computer_side #(CLK_PER_HALF_BIT = 217)
   reg [7:0] first_number;
   reg [31:0] program_buffer;
 
+  initial begin
+    $readmemb("fib.mem", ram);
+  end
 
   always @(posedge clk) begin
     if (~rstn) begin
-      ram[0] <=  32'b0001000_00000_00000_000_01100_0010011;  //  00100093   93001000   addi x1,   zero, 1
-      ram[1] <=  32'b0000000_01011_01101_010_00000_0100011;  //  00100113   13011000   addi x2,   zero, 1
-      ram[2] <=  32'b0000000_00100_01101_000_01101_0010011;  //  00200213   13022000   addi x4,   zero, 2
-      ram[3] <=  32'b0000000_00001_01011_000_01011_0010011;  //  00a00293   9302a000   addi x5,   zero, 10
-      ram[4] <=  32'b0000000_01100_01011_000_01000_1100011;  //  00000393   93030000   addi x7,   zero, 0
-      ram[5] <=  32'b1111111_00000_00000_000_10001_1100011;  //  0013a023   23a01300   sw   x1,   0(x7)
-      ram[6] <=  32'b0000000_00000_00000_000_00000_1100011;  //  00438393   93834300   addi x7,   x7,   4
-      ram[7] <=  32'b0000000_00000_00000_000_00000_0000000;  //  0023a023   23a02300   sw   x2,   0(x7)
-      ram[8] <=  32'b0000000_00000_00000_000_00000_0000000;  //  00438393   93834300   addi x7,   x7,   4                LABEL2
-      ram[9] <=  32'b0000000_00000_00000_000_00000_0000000;  //  002081b3   b3812000   add  x3,   x1,   x2
-      ram[10] <= 32'b0000000_00000_00000_000_00000_0000000;  //  0033a023   23a03300   sw   x3,   0(x7)
-      ram[11] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00010093   93000100   addi x1,   x2,   0
-      ram[12] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00018113   13810100   addi x2,   x3,   0
-      ram[13] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00120213   13021200   addi x4,   x4,   1
-      ram[14] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00520463   63045200   beq  x4,   x5,   LABEL1 (= 64 (+ 8))
-      ram[15] <= 32'b0000000_00000_00000_000_00000_0000000;  //  fe0002e3   e30200fe   beq  zero, zero, LABEL2 (= 32 (- 28))
-      ram[16] <= 32'b0000000_00000_00000_000_00000_0000000;  //  0003a303   03a30300   lw   x6,   0(x7)                  LABEL1
-      ram[17] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00120213   13021200   addi x4,   x4,   1                LABEL3
-      ram[18] <= 32'b0000000_00000_00000_000_00000_0000000;  //  fe000ee3   e30e00fe   beq  zero, zero, LABEL3 (= 68 (- 4))                    
-      ram[19] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[20] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[21] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[22] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[23] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[24] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[25] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[26] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[27] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[28] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[29] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[30] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
-      ram[31] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[0] <=  32'b0000100_00000_00000_000_01010_0010011;  //  00100093   93001000   addi x1,   zero, 1
+      //ram[1] <=  32'b0000000_01110_01101_010_00000_0100011;  //  00100113   13011000   addi x2,   zero, 1
+      //ram[2] <=  32'b0000000_00010_01110_000_01110_0010011;  //  00200213   13022000   addi x4,   zero, 2
+      //ram[3] <=  32'b0000000_00100_01101_000_01101_0010011;  //  00a00293   9302a000   addi x5,   zero, 10
+      //ram[4] <=  32'b0000000_00001_01011_000_01011_0010011;  //  00000393   93030000   addi x7,   zero, 0
+      //ram[5] <=  32'b0000000_01010_01011_000_01000_1100011;  //  0013a023   23a01300   sw   x1,   0(x7)
+      //ram[6] <=  32'b1111111_00000_00000_000_01101_1100011;  //  00438393   93834300   addi x7,   x7,   4
+      //ram[7] <=  32'b0000000_00000_00000_000_01011_0010011;  //  0023a023   23a02300   sw   x2,   0(x7)
+      //ram[8] <=  32'b0000000_00001_01100_000_01100_0010011;  //  00438393   93834300   addi x7,   x7,   4                LABEL2
+      //ram[9] <=  32'b0000000_01010_01100_000_01000_1100011;  //  002081b3   b3812000   add  x3,   x1,   x2
+      //ram[10] <= 32'b1111110_00000_00000_000_11101_1100011;  //  0033a023   23a03300   sw   x3,   0(x7)
+      //ram[11] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00010093   93000100   addi x1,   x2,   0
+      //ram[12] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00018113   13810100   addi x2,   x3,   0
+      //ram[13] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00120213   13021200   addi x4,   x4,   1
+      //ram[14] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00520463   63045200   beq  x4,   x5,   LABEL1 (= 64 (+ 8))
+      //ram[15] <= 32'b0000000_00000_00000_000_00000_0000000;  //  fe0002e3   e30200fe   beq  zero, zero, LABEL2 (= 32 (- 28))
+      //ram[16] <= 32'b1111111_11111_11111_111_11110_0000000;  //  0003a303   03a30300   lw   x6,   0(x7)                  LABEL1
+      //ram[17] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00120213   13021200   addi x4,   x4,   1                LABEL3
+      //ram[18] <= 32'b0000000_00000_00000_000_00000_0000000;  //  fe000ee3   e30e00fe   beq  zero, zero, LABEL3 (= 68 (- 4))                    
+      //ram[19] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[20] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[21] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[22] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[23] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[24] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[25] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[26] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[27] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[28] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[29] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[30] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
+      //ram[31] <= 32'b0000000_00000_00000_000_00000_0000000;  //  00000000
       sdata <= 8'h00;
       tx_start <= 1'b0;
       status <= 16'd0;

@@ -14,6 +14,8 @@ wire branch_ex;
 wire branchtrue;
 wire core_end;
 wire core_start;
+wire data_ready_mem;
+wire data_ready_io;
 wire if_flush;
 wire ifidwrite;
 wire memread_id;
@@ -46,8 +48,7 @@ wire [1:0] forward_b;
 wire [2:0] funct3_id;
 wire [2:0] funct3_ex;
 
-wire [3:0] alu_control;
-
+wire [4:0] alu_control;
 wire [4:0] rd_id;
 wire [4:0] rd_ex;
 wire [4:0] rd_mem;
@@ -59,7 +60,8 @@ wire [4:0] rs2_ex;
 
 wire [6:0] funct7_id;
 wire [6:0] funct7_ex;
-wire [6:0] opcode;
+wire [6:0] opcode_id;
+wire [6:0] opcode_ex;
 
 wire [7:0] controlunit_out;
 wire [7:0] control_signal;
@@ -113,6 +115,7 @@ io _io
     .txd(txd),
     .clk(clk),
     .rstn(rstn),
+    .data_ready_io(data_ready_io),
     .data_from_memory_io(data_from_memory_io),
     .core_end(core_end),
     .wr_en_instr(wr_en_instr),
@@ -140,12 +143,13 @@ alu_controller _alu_controller
     .funct3_ex(funct3_ex),
     .funct7_ex(funct7_ex),
     .alu_op_ex(alu_op_ex),
+    .opcode_ex(opcode_ex),
     .alu_control(alu_control)
   );
 
 controlunit _controlunit
   (
-    .opcode(opcode),
+    .opcode_id(opcode_id),
     .controlunit_out(controlunit_out)
   );
 
@@ -163,13 +167,16 @@ controldecoder _controldecoder
 
 decoder _decoder
   (
+    .clk(clk),
+    .rstn(rstn),
     .instruction_id(instruction_id),
-    .opcode(opcode),
+    .opcode_id(opcode_id),
     .rs1_id(rs1_id),
     .rs2_id(rs2_id),
     .rd_id(rd_id),
     .funct3_id(funct3_id),
-    .funct7_id(funct7_id)
+    .funct7_id(funct7_id),
+    .core_end(core_end)
   );
 
 instruction_ram  _instruction_ram
@@ -185,7 +192,7 @@ instruction_ram  _instruction_ram
     .output_instruction_ram(output_instruction_ram)
   );
 
-data_ram_wrap _data_ram_wrap
+data_ram _data_ram
   (
     .clk(clk),
     .rstn(rstn),
@@ -197,8 +204,12 @@ data_ram_wrap _data_ram_wrap
     .addr_io(addr_io),
     .memread_mem(memread_mem),
     .memread_io(memread_io),
+    .core_start(core_start),
+    .core_end(core_end),
     .data_from_memory_mem(data_from_memory_mem),
-    .data_from_memory_io(data_from_memory_io)
+    .data_from_memory_io(data_from_memory_io),
+    .data_ready_mem(data_ready_mem),
+    .data_ready_io(data_ready_io)
   );
 
 programcounter _programcounter
@@ -210,6 +221,7 @@ programcounter _programcounter
     .pc_ex(pc_ex),
     .pcwrite(pcwrite),
     .core_start(core_start),
+    .data_ready_mem(data_ready_mem),
     .core_end(core_end),
     .pc_if(pc_if)
   );
@@ -228,6 +240,7 @@ ifid _ifid
     .instruction_if(instruction_if),
     .if_flush(if_flush),
     .ifidwrite(ifidwrite),
+    .data_ready_mem(data_ready_mem),
     .pc_id(pc_id),
     .instruction_id(instruction_id)
   );
@@ -252,6 +265,9 @@ idex _idex
     .funct3_id(funct3_id),
     .funct7_id(funct7_id),
     .rd_id(rd_id),
+    .data_ready_mem(data_ready_mem),
+    .opcode_id(opcode_id),
+    .opcode_ex(opcode_ex),
     .branch_ex(branch_ex),
     .memread_ex(memread_ex),
     .memtoreg_ex(memtoreg_ex),
@@ -281,6 +297,7 @@ exmem _exmem
     .alu_result_ex(alu_result_ex),
     .write_data_memory_ex(write_data_memory_ex),
     .rd_ex(rd_ex),
+    .data_ready_mem(data_ready_mem),
     .regwrite_mem(regwrite_mem),
     .memtoreg_mem(memtoreg_mem),
     .memwrite_mem(memwrite_mem),
@@ -299,6 +316,7 @@ memwb _memwb
     .data_from_memory_mem(data_from_memory_mem),
     .alu_result_mem(alu_result_mem),
     .rd_mem(rd_mem),
+    .data_ready_mem(data_ready_mem),
     .regwrite_wb(regwrite_wb),
     .memtoreg_wb(memtoreg_wb),
     .data_from_memory_wb(data_from_memory_wb),

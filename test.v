@@ -1,7 +1,7 @@
 `timescale 100ps/1ps
 `default_nettype none
 
-module test_all #(CLK_PER_HALF_BIT = 217) ();
+module test_all #(CLK_PER_HALF_BIT = 100) ();
   reg clk;
   reg rstn1;
   reg rstn2;
@@ -30,3 +30,4 @@ module test_all #(CLK_PER_HALF_BIT = 217) ();
       clk <= ~clk;
   end
 endmodule
+

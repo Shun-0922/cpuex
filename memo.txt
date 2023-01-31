@@ -4,7 +4,7 @@ xelab -debug typical test_all -s test_all.sim
 xsim -runall test_all.sim
 
 cd Desktop/cpuex-v1.4/server
-py server.py COM8 -p=test.bin
+py server.py COM8 -p=test.bin --baudrate=250000
 
 SAに関して
  https://msyksphinz-self.github.io/riscv-isadoc/html/index.html
