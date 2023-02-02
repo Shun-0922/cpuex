@@ -17,8 +17,8 @@ module alu
   assign alu_ready = fpu_ready;
   assign branch_alu = (alu_result_ex == 32'b0) ? 1'b1 : 1'b0;
   assign alu_result_ex = 
-    (alu_control == 5'b00000) ? src_a & src_b :
-    (alu_control == 5'b00001) ? src_a | src_b :
+    //(alu_control == 5'b00000) ? src_a & src_b :
+    //(alu_control == 5'b00001) ? src_a | src_b :
     (alu_control == 5'b00010) ? $signed(src_a) + $signed(src_b) :
     (alu_control == 5'b00110) ? $signed(src_a) - $signed(src_b) : 
     (alu_control[4])          ? fpu_result : 
