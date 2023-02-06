@@ -21,7 +21,9 @@ module alu
     //(alu_control == 5'b00001) ? src_a | src_b :
     (alu_control == 5'b00010) ? $signed(src_a) + $signed(src_b) :
     (alu_control == 5'b00110) ? $signed(src_a) - $signed(src_b) : 
-    (alu_control[4])          ? fpu_result : 
+    //(alu_control[4])          ? fpu_result : 
+    (alu_control == 5'b10000) ? $signed(src_a) + $signed(src_b) :
+    (alu_control == 5'b10001) ? $signed(src_a) - $signed(src_b) :
     32'b0;
 
   fpu _fpu
@@ -77,11 +79,7 @@ module alu_controller
     (alu_op_ex == 2'd1) ? 5'd6 :
     (alu_op_ex == 2'd3) ? funct7_ex[6:2] + 5'b10000 :
     (
-     (funct3_ex == 3'd7) ? 5'd0 :
-     (funct3_ex == 3'd6) ? 5'd1 :
-     (
-       (funct7_ex == 7'b0100000) ? 5'd6 : 5'd2
-     )
+      (funct7_ex == 7'b0100000) ? 5'd6 : 5'd2
     );
   
 endmodule

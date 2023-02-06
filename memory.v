@@ -80,18 +80,52 @@ module data_ram
   assign data_from_memory_mem = douta;
   assign data_from_memory_io = douta;
 
-  wire valid;
-  assign valid = memwrite_mem || memwrite_io || memread_mem || memread_io;
-
-  reg data_requesting_from_mem;
-  reg data_requesting_from_io;
-
-  assign data_ready_mem = ~data_requesting_from_mem;
-  assign data_ready_io = ~data_requesting_from_io;
+  
 
   wire ready;
   reg [1:0] ready_reg;
   assign ready = (ready_reg == 2'b11) ? 1'b1 : 1'b0;
+
+
+  wire valid;
+
+  wire [1:0] status_mem;
+  wire [1:0] status_io;
+
+  reg status2_mem;
+  reg status2_io;
+
+  always @(posedge clk) begin
+    if (~rstn) begin
+      status2_mem <= 1'b0;
+      status2_io <= 1'b0;
+    end else begin
+      if (memread_mem && ~status2_mem) begin
+        status2_mem <= 1'b1;
+      end else if (status2_mem == 1'b1 && ready) begin
+        status2_mem <= 1'b0;
+      end
+      if (memread_io && ~status2_io) begin
+        status2_io <= 1'b1;
+      end else if (status2_io == 1'b1 && ready) begin
+        status2_io <= 1'b0;
+      end
+    end
+  end
+
+  assign status_mem =
+    (~memread_mem) ? 2'b00 :
+    (~ready) ? 2'b10 :
+    (status2_mem == 1'b0) ? 2'b01 : 2'b11;
+  assign status_io = 
+    (~memread_io) ? 2'b00 :
+    (~ready) ? 2'b10 :
+    (status2_io == 1'b0) ? 2'b01 : 2'b11;
+
+  assign data_ready_io = (status_io == 2'b00) || (status_io == 2'b11);
+  assign data_ready_mem = (status_mem == 2'b00) || (status_mem == 2'b11);
+  assign valid = (status_io == 2'b01 || status_mem == 2'b01);
+
 
 
   blk_mem_gen_1 blk_mem_gen_data (
@@ -103,28 +137,13 @@ module data_ram
     .douta(douta)  // output wire [31 : 0] douta
   );
 
-  always @(posedge clk) begin
-    if (~rstn) begin
-      data_requesting_from_io <= 1'b0;
-      data_requesting_from_mem <= 1'b0;
-    end else begin
-      if (memread_mem) begin
-        data_requesting_from_mem <= 1'b1;
-      end else if (memread_io) begin
-        data_requesting_from_io <= 1'b1;
-      end else if (ready) begin
-        data_requesting_from_mem <= 1'b0;
-        data_requesting_from_io <= 1'b0;
-      end
-    end
-  end
 
   always @(posedge clk) begin
     if (~rstn) begin
       ready_reg <= 2'b11;
     end else begin
-      if (memread_mem || memread_io) begin
-        ready_reg <= 2'b00;
+      if (valid) begin
+        ready_reg <= 2'b10;
       end else if (ready_reg != 2'b11) begin
         ready_reg <= ready_reg + 2'b01;
       end

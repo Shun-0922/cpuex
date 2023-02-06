@@ -1,4 +1,4 @@
-//À¿ƒeƒXƒgƒxƒ“ƒ`
+//ï¿½ï¿½ï¿½ï¿½ï¿½eï¿½Xï¿½gï¿½xï¿½ï¿½ï¿½`
 
 module dram_test (
     master_fifo.master fifo,
@@ -6,14 +6,14 @@ module dram_test (
     input logic mem_clk,
     input cpu_req_type cpu_to_cache_request,
     output cpu_result_type cpu_res,
-    output logic led
+    output logic led_memory
 );
-    //fifo‚Ö‚Ì•W€“I‚ÈM†‚ÌÚ‘±
+    //fifoï¿½Ö‚Ì•Wï¿½ï¿½ï¿½Iï¿½ÈMï¿½ï¿½ï¿½ÌÚ‘ï¿½
     assign fifo.clk = sys_clk;
     assign fifo.rsp_rdy = 1'b1;
     
-    //ƒLƒƒƒbƒVƒ…ƒVƒXƒeƒ€‚É‚Â‚È‚®”zü
-    //Ú×‚È\‘¢‘Ì‚Ì‹Lq‚Í‰ºˆÊƒ‚ƒWƒ…[ƒ‹FL1_cacheQÆ
+    //ï¿½Lï¿½ï¿½ï¿½bï¿½Vï¿½ï¿½ï¿½Vï¿½Xï¿½eï¿½ï¿½ï¿½É‚Â‚È‚ï¿½ï¿½zï¿½ï¿½
+    //ï¿½Ú×‚È\ï¿½ï¿½ï¿½Ì‚Ì‹Lï¿½qï¿½Í‰ï¿½ï¿½Êƒï¿½ï¿½Wï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½FL1_cacheï¿½Qï¿½ï¿½
     mem_data_type mem_data;
     L2_req_type mem_req;
     logic rst;
@@ -27,7 +27,7 @@ module dram_test (
     L1_cache cache_system_instance
     (
         //input
-        .sys_clk(sys_clk),                        //ƒLƒƒƒbƒVƒ…ƒVƒXƒeƒ€
+        .sys_clk(sys_clk),                        //ï¿½Lï¿½ï¿½ï¿½bï¿½Vï¿½ï¿½ï¿½Vï¿½Xï¿½eï¿½ï¿½
         .mem_clk(mem_clk),
         .RST(rst),
         .cpu_to_cache_request(cpu_to_cache_request),   //addr[26:0],data[31:0],rw[0:0],valid[0:0]
@@ -40,19 +40,19 @@ module dram_test (
     
     
     
-    //ƒLƒƒƒbƒVƒ…ƒVƒXƒeƒ€ -> master FIFO ‚ÖƒŠƒNƒGƒXƒg‚ğ‚Â‚È‚°‚é
+    //ï¿½Lï¿½ï¿½ï¿½bï¿½Vï¿½ï¿½ï¿½Vï¿½Xï¿½eï¿½ï¿½ -> master FIFO ï¿½Öƒï¿½ï¿½Nï¿½Gï¿½Xï¿½gï¿½ï¿½ï¿½Â‚È‚ï¿½ï¿½ï¿½
     assign fifo.req.cmd  = ~mem_req.rw;
     assign fifo.req.addr =  mem_req.addr;
     assign fifo.req.data =  mem_req.data;
     assign fifo.req_en   =  mem_req.valid;
-    //master FIFO‚ÉDRAM‚©‚ç—ˆ‚½ƒf[ƒ^‚ğƒLƒƒƒbƒVƒ…ƒVƒXƒeƒ€‚É“n‚·
+    //master FIFOï¿½ï¿½DRAMï¿½ï¿½ï¿½ç—ˆï¿½ï¿½ï¿½fï¿½[ï¿½^ï¿½ï¿½ï¿½Lï¿½ï¿½ï¿½bï¿½Vï¿½ï¿½ï¿½Vï¿½Xï¿½eï¿½ï¿½ï¿½É“nï¿½ï¿½
     assign mem_data.data  = fifo.rsp.data;
     assign mem_data.ready = fifo.rsp_en;
     
-    //ƒeƒXƒg—p
+    //ï¿½eï¿½Xï¿½gï¿½p
     logic first_data_identity = 1'b0;
     logic second_data_identity = 1'b0;
-    assign led = first_data_identity && second_data_identity;
+    assign led_memory = first_data_identity && second_data_identity;
 
     logic [1:0] rsp_state = '0;
     always_ff @ (posedge sys_clk) begin

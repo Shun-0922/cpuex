@@ -32,18 +32,22 @@ wire memwrite_ex;
 wire memwrite_mem;
 wire memwrite_io;
 wire nop_insert;
-wire regwrite_id;
-wire regwrite_ex;
-wire regwrite_mem;
-wire regwrite_wb;
 wire pcwrite;
 wire port_en_1_instr;
+wire rs1_fpu_id;
+wire rs2_fpu_id;
+wire rs1_fpu_ex;
+wire rs2_fpu_ex;
 wire wr_en_instr;
 
 wire [1:0] alu_op_id;
 wire [1:0] alu_op_ex;
 wire [1:0] forward_a;
 wire [1:0] forward_b;
+wire [1:0] regwrite_id;
+wire [1:0] regwrite_ex;
+wire [1:0] regwrite_mem;
+wire [1:0] regwrite_wb;
 
 wire [2:0] funct3_id;
 wire [2:0] funct3_ex;
@@ -63,8 +67,8 @@ wire [6:0] funct7_ex;
 wire [6:0] opcode_id;
 wire [6:0] opcode_ex;
 
-wire [7:0] controlunit_out;
-wire [7:0] control_signal;
+wire [10:0] controlunit_out;
+wire [10:0] control_signal;
 
 wire [31:0] addr_io;
 wire [31:0] addr_in_instr;
@@ -107,7 +111,7 @@ assign write_data_memory_ex = (forward_b == 2'b00) ? read_data2_ex :
                               (forward_b == 2'b10) ? alu_result_mem : write_data_register_wb;
 assign src_a = (forward_a == 2'b00) ? read_data1_ex :
                (forward_a == 2'b10) ? alu_result_mem : write_data_register_wb;
-assign control_signal = (nop_insert == 1'b1) ? 8'b0 : controlunit_out;
+assign control_signal = (nop_insert == 1'b1) ? 11'b0 : controlunit_out;
 
 io _io
   (
@@ -164,8 +168,10 @@ controldecoder _controldecoder
     .alu_op_id(alu_op_id),
     .memwrite_id(memwrite_id),
     .alusrc_id(alusrc_id),
-    .regwrite_id(regwrite_id)
-  );
+    .regwrite_id(regwrite_id),
+    .rs1_fpu_id(rs1_fpu_id),
+    .rs2_fpu_id(rs2_fpu_id)
+ );
 
 decoder _decoder
   (
@@ -269,6 +275,10 @@ idex _idex
     .rd_id(rd_id),
     .data_ready_mem(data_ready_mem),
     .opcode_id(opcode_id),
+    .rs1_fpu_id(rs1_fpu_id),
+    .rs2_fpu_id(rs2_fpu_id),
+    .rs1_fpu_ex(rs1_fpu_ex),
+    .rs2_fpu_ex(rs2_fpu_ex),
     .opcode_ex(opcode_ex),
     .branch_ex(branch_ex),
     .memread_ex(memread_ex),
@@ -334,6 +344,8 @@ forwarding_unit _forwarding_unit
     .rs2_ex(rs2_ex),
     .regwrite_wb(regwrite_wb),
     .regwrite_mem(regwrite_mem),
+    .rs1_fpu_ex(rs1_fpu_ex),
+    .rs2_fpu_ex(rs2_fpu_ex),
     .forward_a(forward_a),
     .forward_b(forward_b)
   );
@@ -358,6 +370,8 @@ registerfile _registerfile
     .rd_wb(rd_wb),
     .write_data_register_wb(write_data_register_wb),
     .regwrite_wb(regwrite_wb),
+    .rs1_fpu_id(rs1_fpu_id),
+    .rs2_fpu_id(rs2_fpu_id),
     .clk(clk),
     .rstn(rstn),
     .read_data1_id(read_data1_id),

@@ -315,7 +315,7 @@ endmodule
 
 
 //module to simulate io
-module io_computer_side #(CLK_PER_HALF_BIT = 217) 
+module io_computer_side #(CLK_PER_HALF_BIT = 434) 
   (
     input wire rxd,
     output wire txd,

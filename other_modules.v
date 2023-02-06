@@ -40,8 +40,8 @@ module immediate_generator
   
   assign opcode = instruction_id[6:0];
   assign imm_short = (opcode == 7'b1100011) ? {instruction_id[31],instruction_id[7],instruction_id[30:25],instruction_id[11:8]} :
-                     (opcode == 7'b0100011) ? {instruction_id[31:25],instruction_id[11:7]} :
-                     (opcode == 7'b0000011 || opcode == 7'b0010011) ? {instruction_id[31:20]} : 12'b0;
+                     (opcode == 7'b0100011 || opcode == 7'b0100111) ? {instruction_id[31:25],instruction_id[11:7]} :
+                     (opcode == 7'b0000011 || opcode == 7'b0010011 || opcode == 7'b0000111) ? {instruction_id[31:20]} : 12'b0;
   assign imm_id = (imm_short[11] == 1'b1) ? {20'hfffff, imm_short} : {20'b0, imm_short};
   
 endmodule
@@ -63,6 +63,9 @@ module ifid
   reg [31:0] pc_3;
   reg [31:0] instruction;
   reg [1:0] record_flush;
+  reg [1:0] stall_count;
+  reg [31:0] next1;
+  reg [31:0] next2;
   assign pc_id = pc_3;
   assign instruction_id = instruction;
   
@@ -73,8 +76,17 @@ module ifid
       pc_3 <= 32'b0;
       instruction <= 32'b0;
       record_flush <= 2'b0;
+      stall_count <= 2'b0;
+      next1 <= 32'd3;
+      next2 <= 32'd3;
     end else if (ifidwrite || ~data_ready_mem) begin
-      record_flush <= record_flush;
+      if (stall_count == 2'b00) begin
+        stall_count <= stall_count + 2'b01;
+        next1 <= instruction_if;
+      end else if (stall_count == 2'b01) begin
+        stall_count <= stall_count + 2'b01;
+        next2 <= instruction_if;
+      end
     end else if (if_flush) begin
       pc_1 <= pc_if;
       pc_2 <= pc_1;
@@ -97,7 +109,18 @@ module ifid
       pc_1 <= pc_if;
       pc_2 <= pc_1;
       pc_3 <= pc_2;
-      instruction <= instruction_if;
+      if (next1 == 32'd3) begin
+        instruction <= instruction_if;
+      end else begin
+        instruction <= next1;
+        next1 <= next2;
+        next2 <= 32'd3;
+      end
+      if (stall_count == 2'b01) begin
+        stall_count <= stall_count - 2'b01;
+      end else if (stall_count == 2'b10) begin
+        stall_count <= stall_count - 2'b01;
+      end
     end
   end
 
@@ -113,7 +136,7 @@ module idex
     input wire [1:0] alu_op_id,
     input wire memwrite_id,
     input wire alusrc_id,
-    input wire regwrite_id,
+    input wire [1:0] regwrite_id,
     input wire [31:0] pc_id,
     input wire [31:0] read_data1_id,
     input wire [31:0] read_data2_id,
@@ -125,6 +148,10 @@ module idex
     input wire [4:0] rd_id,
     input wire data_ready_mem,
     input wire [6:0] opcode_id,
+    input wire rs1_fpu_id,
+    input wire rs2_fpu_id,
+    output wire rs1_fpu_ex,
+    output wire rs2_fpu_ex,
     output wire [6:0] opcode_ex,
     output wire branch_ex,
     output wire memread_ex,
@@ -132,7 +159,7 @@ module idex
     output wire [1:0] alu_op_ex,
     output wire memwrite_ex,
     output wire alusrc_ex,
-    output wire regwrite_ex,
+    output wire [1:0] regwrite_ex,
     output wire [31:0] pc_ex,
     output wire [31:0] read_data1_ex,
     output wire [31:0] read_data2_ex,
@@ -149,7 +176,7 @@ module idex
   reg [1:0] alu_op;
   reg memwrite;
   reg alusrc;
-  reg regwrite;
+  reg [1:0] regwrite;
   reg [31:0] pc;
   reg [31:0] read_data1;
   reg [31:0] read_data2;
@@ -160,6 +187,8 @@ module idex
   reg [6:0] funct7;
   reg [4:0] rd;
   reg [6:0] opcode;
+  reg rs1_fpu;
+  reg rs2_fpu;
 
   assign branch_ex = branch;
   assign memread_ex = memread;
@@ -178,6 +207,8 @@ module idex
   assign funct7_ex = funct7;
   assign rd_ex = rd;
   assign opcode_ex = opcode;
+  assign rs1_fpu_ex = rs1_fpu;
+  assign rs2_fpu_ex = rs2_fpu;
 
   always @(posedge clk) begin
     if (~rstn) begin
@@ -187,7 +218,7 @@ module idex
       alu_op <= 2'b0;
       memwrite <= 1'b0;
       alusrc <= 1'b0;
-      regwrite <= 1'b0;
+      regwrite <= 2'b0;
       pc <= 32'b0;
       read_data1 <= 32'b0;
       read_data2 <= 32'b0;
@@ -198,6 +229,8 @@ module idex
       funct7 <= 7'b0;
       rd <= 5'b0;
       opcode <= 7'b0;
+      rs1_fpu <= 1'b0;
+      rs2_fpu <= 1'b0;
     end else if (data_ready_mem) begin
       branch <= branch_id;
       memread <= memread_id;
@@ -216,6 +249,8 @@ module idex
       funct7 <= funct7_id;
       rd <= rd_id;
       opcode <= opcode_id;
+      rs1_fpu <= rs1_fpu_id;
+      rs2_fpu <= rs2_fpu_id;
     end
   end
 
@@ -226,7 +261,7 @@ module exmem
   (
     input wire clk,
     input wire rstn,
-    input wire regwrite_ex,
+    input wire [1:0] regwrite_ex,
     input wire memtoreg_ex,
     input wire memwrite_ex,
     input wire memread_ex,
@@ -234,7 +269,7 @@ module exmem
     input wire [31:0] write_data_memory_ex,
     input wire [4:0] rd_ex,
     input wire data_ready_mem,
-    output wire regwrite_mem,
+    output wire [1:0] regwrite_mem,
     output wire memtoreg_mem,
     output wire memwrite_mem,
     output wire memread_mem,
@@ -243,7 +278,7 @@ module exmem
     output wire [4:0] rd_mem
 
   );
-  reg regwrite;
+  reg [1:0] regwrite;
   reg memtoreg;
   reg memwrite;
   reg memread;
@@ -260,7 +295,7 @@ module exmem
   
   always @(posedge clk) begin
     if (~rstn) begin
-      regwrite <= 1'b0;
+      regwrite <= 2'b0;
       memtoreg <= 1'b0;
       memwrite <= 1'b0;
       memread <= 1'b0;
@@ -285,19 +320,19 @@ module memwb
   (
     input wire clk,
     input wire rstn,
-    input wire regwrite_mem,
+    input wire [1:0] regwrite_mem,
     input wire memtoreg_mem,
     input wire [31:0] data_from_memory_mem,
     input wire [31:0] alu_result_mem,
     input wire [4:0] rd_mem,
     input wire data_ready_mem,
-    output wire regwrite_wb,
+    output wire [1:0] regwrite_wb,
     output wire memtoreg_wb,
     output wire [31:0] data_from_memory_wb,
     output wire [31:0] alu_result_wb,
     output wire [4:0] rd_wb
   );
-  reg regwrite;
+  reg [1:0] regwrite;
   reg memtoreg;
   reg [31:0] data_from_memory;
   reg [31:0] alu_result;
@@ -311,7 +346,7 @@ module memwb
 
   always @(posedge clk) begin
     if (~rstn) begin
-      regwrite <= 1'b0;
+      regwrite <= 2'b0;
       memtoreg <= 1'b0;
       data_from_memory <= 32'b0;
       alu_result <= 32'b0;
@@ -334,15 +369,17 @@ module forwarding_unit
     input wire [4:0] rd_mem,
     input wire [4:0] rs1_ex,
     input wire [4:0] rs2_ex,
-    input wire regwrite_wb,
-    input wire regwrite_mem,
+    input wire [1:0] regwrite_wb,
+    input wire [1:0] regwrite_mem,
+    input wire rs1_fpu_ex,
+    input wire rs2_fpu_ex,
     output wire [1:0] forward_a,
     output wire [1:0] forward_b
   );
-  assign forward_a = (regwrite_mem == 1'b1 && rd_mem != 5'b0 && rs1_ex == rd_mem) ? 2'b10 :
-                     (regwrite_wb == 1'b1 && rd_wb != 5'b0 && rd_wb == rs1_ex) ? 2'b01 : 2'b00;
-  assign forward_b = (regwrite_mem == 1'b1 && rd_mem != 5'b0 && rs2_ex == rd_mem) ? 2'b10 :
-                     (regwrite_wb == 1'b1 && rd_wb != 5'b0 && rd_wb == rs2_ex) ? 2'b01 : 2'b00;
+  assign forward_a = (((regwrite_mem == 2'b01 && rs1_fpu_ex == 1'b0) || (regwrite_mem == 2'b10 && rs1_fpu_ex == 1'b1)) && rd_mem != 5'b0 && rs1_ex == rd_mem) ? 2'b10 :
+                     (((regwrite_wb == 2'b01 && rs1_fpu_ex == 1'b0) || (regwrite_wb == 2'b10 && rs1_fpu_ex == 1'b1)) && rd_wb != 5'b0 && rd_wb == rs1_ex) ? 2'b01 : 2'b00;
+  assign forward_b = (((regwrite_mem == 2'b01 && rs2_fpu_ex == 1'b0) || (regwrite_mem == 2'b10 && rs2_fpu_ex == 1'b1)) && rd_mem != 5'b0 && rs2_ex == rd_mem) ? 2'b10 :
+                     (((regwrite_wb == 2'b01 && rs2_fpu_ex == 1'b0) || (regwrite_wb == 2'b10 && rs2_fpu_ex == 1'b1)) && rd_wb != 5'b0 && rd_wb == rs2_ex) ? 2'b01 : 2'b00;
 endmodule
 
 
