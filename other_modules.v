@@ -8,6 +8,7 @@ module programcounter
     input wire pcwrite,
     input wire core_start,
     input wire data_ready_mem,
+    input wire alu_ready,
     input wire core_end,
     output wire [31:0] pc_if
   );
@@ -21,7 +22,7 @@ module programcounter
   always @(posedge clk) begin
     if (~rstn || ~core_start || core_end) begin
       pc <= 32'b0;
-    end else if (pcwrite || ~data_ready_mem) begin
+    end else if (pcwrite || ~data_ready_mem || ~alu_ready) begin
       pc <= pc;
     end else begin
       pc <= next_pc;
@@ -55,6 +56,7 @@ module ifid
     input wire if_flush,
     input wire ifidwrite,
     input wire data_ready_mem,
+    input wire alu_ready,
     output wire [31:0] pc_id,
     output wire [31:0] instruction_id
   );
@@ -79,7 +81,7 @@ module ifid
       stall_count <= 2'b0;
       next1 <= 32'd3;
       next2 <= 32'd3;
-    end else if (ifidwrite || ~data_ready_mem) begin
+    end else if (ifidwrite || ~data_ready_mem || ~alu_ready) begin
       if (stall_count == 2'b00) begin
         stall_count <= stall_count + 2'b01;
         next1 <= instruction_if;
@@ -147,6 +149,7 @@ module idex
     input wire [6:0] funct7_id,
     input wire [4:0] rd_id,
     input wire data_ready_mem,
+    input wire alu_ready,
     input wire [6:0] opcode_id,
     input wire rs1_fpu_id,
     input wire rs2_fpu_id,
@@ -231,7 +234,7 @@ module idex
       opcode <= 7'b0;
       rs1_fpu <= 1'b0;
       rs2_fpu <= 1'b0;
-    end else if (data_ready_mem) begin
+    end else if (data_ready_mem && alu_ready) begin
       branch <= branch_id;
       memread <= memread_id;
       memtoreg <= memtoreg_id;
@@ -269,6 +272,7 @@ module exmem
     input wire [31:0] write_data_memory_ex,
     input wire [4:0] rd_ex,
     input wire data_ready_mem,
+    input wire alu_ready,
     output wire [1:0] regwrite_mem,
     output wire memtoreg_mem,
     output wire memwrite_mem,
@@ -302,7 +306,7 @@ module exmem
       alu_result <= 32'b0;
       write_data_memory <= 32'b0;
       rd <= 5'b0;
-    end else if (data_ready_mem) begin
+    end else if (data_ready_mem && alu_ready) begin
       regwrite <= regwrite_ex;
       memtoreg <= memtoreg_ex;
       memwrite <= memwrite_ex;
@@ -326,6 +330,7 @@ module memwb
     input wire [31:0] alu_result_mem,
     input wire [4:0] rd_mem,
     input wire data_ready_mem,
+    input wire alu_ready,
     output wire [1:0] regwrite_wb,
     output wire memtoreg_wb,
     output wire [31:0] data_from_memory_wb,
@@ -351,7 +356,7 @@ module memwb
       data_from_memory <= 32'b0;
       alu_result <= 32'b0;
       rd <= 5'b0;
-    end else if (data_ready_mem) begin
+    end else if (data_ready_mem && alu_ready) begin
       regwrite <= regwrite_mem;
       memtoreg <= memtoreg_mem;
       data_from_memory <= data_from_memory_mem;

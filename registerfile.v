@@ -7,6 +7,8 @@ module registerfile
     input wire [1:0] regwrite_wb,
     input wire rs1_fpu_id,
     input wire rs2_fpu_id,
+    input wire data_ready_mem,
+    input wire alu_ready,
     input wire clk,
     input wire rstn,
     output wire [31:0] read_data1_id,

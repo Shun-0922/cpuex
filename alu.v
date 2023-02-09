@@ -2,17 +2,18 @@
 module alu
   (
     input wire clk,
+    input wire mem_clk,
     input wire rstn,
     input wire [31:0] src_a,
     input wire [31:0] src_b,
     input wire [4:0] alu_control,
+    input wire data_ready_mem,
     output wire branch_alu,
-    output wire [31:0] alu_result_ex
+    output wire [31:0] alu_result_ex,
+    output wire alu_ready
   );
   wire [31:0] fpu_result;
   wire fpu_ready;
-  
-  wire alu_ready;
 
   assign alu_ready = fpu_ready;
   assign branch_alu = (alu_result_ex == 32'b0) ? 1'b1 : 1'b0;
@@ -21,16 +22,18 @@ module alu
     //(alu_control == 5'b00001) ? src_a | src_b :
     (alu_control == 5'b00010) ? $signed(src_a) + $signed(src_b) :
     (alu_control == 5'b00110) ? $signed(src_a) - $signed(src_b) : 
-    //(alu_control[4])          ? fpu_result : 
-    (alu_control == 5'b10000) ? $signed(src_a) + $signed(src_b) :
-    (alu_control == 5'b10001) ? $signed(src_a) - $signed(src_b) :
+    (alu_control[4])          ? fpu_result : 
+    //(alu_control == 5'b10000) ? $signed(src_a) + $signed(src_b) :
+    //(alu_control == 5'b10001) ? $signed(src_a) - $signed(src_b) :
     32'b0;
 
   fpu _fpu
     (
       .clk(clk),
+      .mem_clk(mem_clk),
       .rstn(rstn),
       .alu_control(alu_control),
+      .data_ready_mem(data_ready_mem),
       .src_a(src_a),
       .src_b(src_b),
       .fpu_result(fpu_result),
@@ -43,22 +46,76 @@ endmodule
 module fpu
   (
     input wire clk,
+    input wire mem_clk,
     input wire rstn,
     input wire [4:0] alu_control,
+    input wire data_ready_mem,
     input wire [31:0] src_a,
     input wire [31:0] src_b,
     output wire [31:0] fpu_result,
     output wire fpu_ready
   );
 
-  reg fpu_ready_reg;
-  reg [3:0] remaining_cycles;
+  wire [7:0] opcode;
+  wire out_valid;
+  wire [31:0] x1;
+  wire [31:0] x2;
+  assign x1 = src_a;
+  assign x2 = src_b;
+  wire ovf;
+  wire unf;
+  wire [31:0] y;
+  
+  
+  wire [2:0] status1;
+  reg  [1:0] status2;
+  
+  assign fpu_result = y;
+  assign fpu_ready = (status1 == 3'd0 || status1 == 3'd3 || status1 == 3'd4);
+  assign status1 = 
+    (~alu_control[4]) ? 3'b000 :
+    (out_valid) ? 3'b011 :
+    (status2 == 2'b10) ? 3'b100 :
+    (status2 == 2'b01) ? 3'b010 : 3'b001;
+
+  assign opcode = 
+    (status1 != 3'd1) ? 8'b0 :
+    (alu_control == 5'b10000) ? 8'b00000001 :
+    (alu_control == 5'b10001) ? 8'b00000010 :
+    (alu_control == 5'b10010) ? 8'b00000100 :
+    (alu_control == 5'b10011) ? 8'b00001000 :
+    (alu_control == 5'b11011) ? 8'b00010000 :
+    (alu_control == 5'b10101) ? 8'b10000000 :
+    (alu_control == 5'b10110) ? 8'b00100000 :
+    (alu_control == 5'b10111) ? 8'b01000000 : 8'b0;
+
+  fpu_top _fpu_top
+    (
+      .clk(clk),
+      .mem_clk(mem_clk),
+      .rstn(rstn),
+      .opcode(opcode),
+      .x1(x1),
+      .x2(x2),
+      .y(y),
+      .ovf(ovf),
+      .unf(unf),
+      .out_valid(out_valid)
+    );
 
   always @(posedge clk) begin
     if (~rstn) begin
-      fpu_ready_reg <= 1'b1;
-    end else if (alu_control[4] == 1'b0) begin
-      fpu_ready_reg <= 1'b1;
+      status2 <= 2'b0;
+    end else begin
+      if (status2 == 2'b00 && alu_control[4]) begin
+        status2 <= 2'b01;
+      end else if (status2 == 2'b01 && out_valid && ~data_ready_mem) begin
+        status2 <= 2'b10;
+      end else if (status2 == 2'b01 && out_valid && data_ready_mem) begin
+        status2 <= 2'b00;
+      end else if (status2 == 2'b10 && data_ready_mem) begin
+        status2 <= 2'b00;
+      end
     end
   end
 
