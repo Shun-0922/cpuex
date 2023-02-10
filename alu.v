@@ -56,16 +56,19 @@ module fpu
     output wire fpu_ready
   );
 
-  wire [7:0] opcode;
+  wire [7:0] opcode_wire;
   wire out_valid;
-  wire [31:0] x1;
-  wire [31:0] x2;
-  assign x1 = src_a;
-  assign x2 = src_b;
+  wire [31:0] x1_wire;
+  wire [31:0] x2_wire;
+  assign x1_wire = src_a;
+  assign x2_wire = src_b;
   wire ovf;
   wire unf;
   wire [31:0] y;
-  
+
+  reg [7:0] opcode;
+  reg [31:0] x1;
+  reg [31:0] x2;
   
   wire [2:0] status1;
   reg  [1:0] status2;
@@ -78,7 +81,7 @@ module fpu
     (status2 == 2'b10) ? 3'b100 :
     (status2 == 2'b01) ? 3'b010 : 3'b001;
 
-  assign opcode = 
+  assign opcode_wire = 
     (status1 != 3'd1) ? 8'b0 :
     (alu_control == 5'b10000) ? 8'b00000001 :
     (alu_control == 5'b10001) ? 8'b00000010 :
@@ -116,6 +119,18 @@ module fpu
       end else if (status2 == 2'b10 && data_ready_mem) begin
         status2 <= 2'b00;
       end
+    end
+  end
+
+  always @(posedge clk) begin
+    if (~rstn) begin
+      opcode <= 7'b0;
+      x1 <= 32'b0;
+      x2 <= 32'b0;
+    end else begin
+      opcode <= opcode_wire;
+      x1 <= x1_wire;
+      x2 <= x2_wire;
     end
   end
 
