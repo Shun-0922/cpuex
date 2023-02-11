@@ -94,8 +94,7 @@ module fpu
 
   fpu_top _fpu_top
     (
-      .clk(clk),
-      .mem_clk(mem_clk),
+      .sys_clk(clk),
       .rstn(rstn),
       .opcode(opcode),
       .x1(x1),
