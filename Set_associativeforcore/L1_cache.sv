@@ -1,4 +1,4 @@
-//ƒLƒƒƒbƒVƒ…–{‘ÌiƒR[ƒhj
+//ã‚­ãƒ£ãƒƒã‚·ãƒ¥æœ¬ä½“ï¼ˆã‚³ãƒ¼ãƒ‰ï¼‰
 
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +86,7 @@ typedef struct {
 
 // CACHE SYSTEM
 module L1_cache(
-    input  bit sys_clk,                        //ƒLƒƒƒbƒVƒ…ƒVƒXƒeƒ€
+    input  bit sys_clk,                        //ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚·ã‚¹ãƒ†ãƒ 
     input  bit mem_clk,
     input  bit rst,
     input  cpu_req_type cpu_to_cache_request,   //addr[26:0],data[31:0],rw[0:0],valid[0:0]
@@ -95,7 +95,7 @@ module L1_cache(
     output cpu_result_type cpu_res,              //cache result (cache->CPU) data[31:0], ready[0:0]
     output logic [2:0] state);
     
-    //tag, index, offsetiæ‚èo‚µ‚½‚à‚Ìj
+    //tag, index, offsetï¼ˆå–ã‚Šå‡ºã—ãŸã‚‚ã®ï¼‰
     logic [TAGMSB   :TAGLSB   ]  tag;
     logic [INDEXMSB :INDEXLSB ]  index;
     logic [OFFSETMSB:OFFSETLSB]  offset;
@@ -105,21 +105,21 @@ module L1_cache(
     assign offset = cpu_to_cache_request.addr[OFFSETMSB:OFFSETLSB];
     
     logic         ena;
-    assign ena = 1'b1;   //ƒƒ‚ƒŠ‚Í‚·‚×‚ÄƒAƒNƒeƒBƒu‚Éİ’è‚·‚é
+    assign ena = 1'b1;   //ãƒ¡ãƒ¢ãƒªã¯ã™ã¹ã¦ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã«è¨­å®šã™ã‚‹
     
-    //PMT‚É‘‚«‚Şê‡‚ÌƒCƒ“ƒfƒbƒNƒX‚ğŠi”[‚·‚é
+    //PMTã«æ›¸ãè¾¼ã‚€å ´åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’æ ¼ç´ã™ã‚‹
     cache_req_type pmt_req_L1_way0; //tag request
     cache_req_type pmt_req_L1_way1; //tag request
-    //PMT‚É‘‚«‚Şê‡‚ÌTag, Accessed, Validƒrƒbƒg‚ğŠi”[‚·‚é
+    //PMTã«æ›¸ãè¾¼ã‚€å ´åˆã®Tag, Accessed, Validãƒ“ãƒƒãƒˆã‚’æ ¼ç´ã™ã‚‹
     cache_tag_type pmt_L1_way0_dout; //tag read result
     cache_tag_type pmt_L1_way1_dout; //tag read result
     cache_tag_type pmt_L1_way0_din; //tag write data
     cache_tag_type pmt_L1_way1_din; //tag write data
     
-    // Cache‚É‘‚«‚Şê‡‚ÌƒCƒ“ƒfƒbƒNƒX‚ğŠi”[‚·‚é
+    // Cacheã«æ›¸ãè¾¼ã‚€å ´åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’æ ¼ç´ã™ã‚‹
     cache_req_type data_req_L1_way0; //data req
     cache_req_type data_req_L1_way1; //data req
-    // Cache‚É‘‚«‚Şê‡‚Ìƒf[ƒ^‚ğŠi”[‚·‚é
+    // Cacheã«æ›¸ãè¾¼ã‚€å ´åˆã®ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹
     cache_data_type cache_L1_way0_dout; //cache line read data
     cache_data_type cache_L1_way1_dout; //cache line read data
     cache_data_type cache_L1_way0_dout_ordered; //cache line read data
@@ -130,10 +130,10 @@ module L1_cache(
     assign cache_L1_way0_dout_ordered = {cache_L1_way0_dout[95:64], cache_L1_way0_dout[127:96], cache_L1_way0_dout[31:0], cache_L1_way0_dout[63:32]};
     assign cache_L1_way1_dout_ordered = {cache_L1_way1_dout[95:64], cache_L1_way1_dout[127:96], cache_L1_way1_dout[31:0], cache_L1_way1_dout[63:32]};
     
-    //‚»‚ê‚¼‚ê‚ÌL1ƒLƒƒƒbƒVƒ…way‚©‚ço‚Ä‚«‚½ƒf[ƒ^‚ğŠi”[‚·‚é
+    //ãã‚Œãã‚Œã®L1ã‚­ãƒ£ãƒƒã‚·ãƒ¥wayã‹ã‚‰å‡ºã¦ããŸãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹
     cpu_result_type cpu_res_L1_way0;
     cpu_result_type cpu_res_L1_way1;
-    // L1‚Æ‚µ‚Ä•Ô‚·ÅI“I‚Èƒf[ƒ^
+    // L1ã¨ã—ã¦è¿”ã™æœ€çµ‚çš„ãªãƒ‡ãƒ¼ã‚¿
     cpu_result_type cpu_res_L1; 
     /*temporary variable for memory controller request*/
     L2_req_type mem_req_L1_to_L2;
@@ -157,7 +157,7 @@ module L1_cache(
     // L1 Cache (WAY0)
     CACHE_L1_way0 CACHE_L1_way0 (
         .clka(mem_clk),
-        .ena(ena),     //í‚ÉƒAƒNƒeƒBƒu
+        .ena(ena),     //å¸¸ã«ã‚¢ã‚¯ãƒ†ã‚£ãƒ–
         .wea(data_req_L1_way0.we),
         .addra(data_req_L1_way0.index),
         .dina(cache_L1_way0_din),
@@ -194,8 +194,8 @@ module L1_cache(
     
    
     /*write clock*/
-    typedef enum {idle, compare_tag, allocate, allocate_wait, wait_before_write_back, write_back} cache_state_type;   //ƒI[ƒgƒ}ƒgƒ“‚Ìó‘ÔF¶‚©‚ç‡‚É0,1,2,3
-    // —LŒÀó‘Ô‚ÌŒ»İ‚Ìó‘Ô‚ÆŸ‚Ìó‘Ô‚ğ•Û‚·‚é
+    typedef enum {idle, compare_tag, allocate, allocate_wait, wait_before_write_back, write_back} cache_state_type;   //ã‚ªãƒ¼ãƒˆãƒãƒˆãƒ³ã®çŠ¶æ…‹ï¼šå·¦ã‹ã‚‰é †ã«0,1,2,3
+    // æœ‰é™çŠ¶æ…‹ã®ç¾åœ¨ã®çŠ¶æ…‹ã¨æ¬¡ã®çŠ¶æ…‹ã‚’ä¿æŒã™ã‚‹
     cache_state_type  vstate, rstate;
     
     assign mem_req = mem_req_L1_to_L2; //connect to output ports
@@ -215,25 +215,25 @@ module L1_cache(
     cpu_res_L1 = '{0, 0};
     pmt_L1_way0_din = '{0, 0, 0, 0};
     pmt_L1_way1_din = '{0, 0, 0, 0};
-    //Šî–{“I‚ÉPMT‚É‚Í‘‚«‚Ü‚È‚¢
+    //åŸºæœ¬çš„ã«PMTã«ã¯æ›¸ãè¾¼ã¾ãªã„
     pmt_req_L1_way0.we = 1'b0;
     pmt_req_L1_way1.we = 1'b0;
     /*direct map index for tag*/
     pmt_req_L1_way0.index = cpu_to_cache_request.addr[INDEXMSB:INDEXLSB];
     pmt_req_L1_way1.index = cpu_to_cache_request.addr[INDEXMSB:INDEXLSB];
     
-    // Šî–{“I‚ÉƒLƒƒƒbƒVƒ…‚É‚Í‘‚«‚Ü‚È‚¢
+    // åŸºæœ¬çš„ã«ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«ã¯æ›¸ãè¾¼ã¾ãªã„
     data_req_L1_way0.we = 1'b0;
     data_req_L1_way1.we = 1'b0;
-    //L1?¿½L?¿½?¿½?¿½b?¿½V?¿½?¿½?¿½Íƒf?¿½t?¿½H?¿½?¿½?¿½g?¿½Å‚Íw?¿½è‚³?¿½ê‚½index?¿½Ìƒf?¿½[?¿½^?¿½?¿½Ç‚İo?¿½?¿½?¿½æ‚¤?¿½Éw?¿½è‚µ?¿½Ä‚ï¿½?¿½?¿½
+    //L1?ï½¿ï½½L?ï½¿ï½½?ï½¿ï½½?ï½¿ï½½b?ï½¿ï½½V?ï½¿ï½½?ï½¿ï½½?ï½¿ï½½ï¾ãƒ‡?ï½¿ï½½t?ï½¿ï½½H?ï½¿ï½½?ï½¿ï½½?ï½¿ï½½g?ï½¿ï½½ï¾…ã¯æŒ‡?ï½¿ï½½é–§ï½³?ï½¿ï½½é»·ï½½index?ï½¿ï½½ï¾Œãƒ‡?ï½¿ï½½[?ï½¿ï½½^?ï½¿ï½½?ï½¿ï½½ï¾‡ã¿å‡º?ï½¿ï½½?ï½¿ï½½?ï½¿ï½½è¬”ï½¤?ï½¿ï½½ï¾‰æŒ‡?ï½¿ï½½é–§ï½µ?ï½¿ï½½ï¾„ã‚‘ï½¿ï½½?ï½¿ï½½?ï½¿ï½½
     data_req_L1_way0.index = cpu_to_cache_request.addr[INDEXMSB:INDEXLSB];
     data_req_L1_way1.index = cpu_to_cache_request.addr[INDEXMSB:INDEXLSB];
     
-    //ƒLƒƒƒbƒVƒ…‚É‘‚«‚Şƒf[ƒ^‚Ío‚Ä‚«‚½ƒf[ƒ^‚É‚Â‚È‚°‚Ä‚¨‚­iHj
+    //ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«æ›¸ãè¾¼ã‚€ãƒ‡ãƒ¼ã‚¿ã¯å‡ºã¦ããŸãƒ‡ãƒ¼ã‚¿ã«ã¤ãªã’ã¦ãŠãï¼ˆï¼Ÿï¼‰
     cache_L1_way0_din = cache_L1_way0_dout;
     cache_L1_way1_din = cache_L1_way1_dout;
     
-    // ‘‚«‚İ‚½‚¢ƒf[ƒ^‚ª“ü‚é‚×‚«êŠ‚Éƒf[ƒ^‚ğŠi”[‚µ‚Ä‚¨‚­
+    // æ›¸ãè¾¼ã¿ãŸã„ãƒ‡ãƒ¼ã‚¿ãŒå…¥ã‚‹ã¹ãå ´æ‰€ã«ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã—ã¦ãŠã
     case({2'b0, cpu_to_cache_request.addr[OFFSETMSB:OFFSETLSB]})
         4'b0000: begin
             cache_L1_way0_din[31:0]     = cpu_to_cache_request.data;
@@ -303,7 +303,7 @@ module L1_cache(
         */
     endcase
     
-    // o‚Ä‚«‚½ƒf[ƒ^‚Ì‚¤‚¿Š–]‚Ì‰ÓŠ‚¾‚¯Ø‚èæ‚Á‚ÄCPU‚É•Ô‚·
+    // å‡ºã¦ããŸãƒ‡ãƒ¼ã‚¿ã®ã†ã¡æ‰€æœ›ã®ç®‡æ‰€ã ã‘åˆ‡ã‚Šå–ã£ã¦CPUã«è¿”ã™
     case({2'b0, cpu_to_cache_request.addr[OFFSETMSB:OFFSETLSB]})
         4'b0000: begin
             cpu_res_L1_way0.data = cache_L1_way0_dout[31:0];
@@ -373,11 +373,11 @@ module L1_cache(
         */
     endcase
     
-    // L1‚ÅŒ©‚Â‚©‚ç‚È‚¢ê‡‚Í“¯‚¶ƒAƒhƒŒƒX‚Å‰ºˆÊƒƒ‚ƒŠ‚Éq‚Ë‚é
+    // L1ã§è¦‹ã¤ã‹ã‚‰ãªã„å ´åˆã¯åŒã˜ã‚¢ãƒ‰ãƒ¬ã‚¹ã§ä¸‹ä½ãƒ¡ãƒ¢ãƒªã«å°‹ã­ã‚‹
     mem_req_L1_to_L2.addr = {cpu_to_cache_request.addr[26:3], 3'b0}; 
-    //‘‚«–ß‚·ê‡‚ÍLRU‚Å‘I‚ñ‚ÅA‚¢‚ç‚È‚¢•û‚Ìƒf[ƒ^‚ğ‰ºˆÊƒLƒƒƒbƒVƒ…‚É‘‚«–ß‚·
+    //æ›¸ãæˆ»ã™å ´åˆã¯LRUã§é¸ã‚“ã§ã€ã„ã‚‰ãªã„æ–¹ã®ãƒ‡ãƒ¼ã‚¿ã‚’ä¸‹ä½ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«æ›¸ãæˆ»ã™
     mem_req_L1_to_L2.data = 128'b0; //LRU ? cache_L1_way1_dout : cache_L1_way0_dout;
-    //‚½‚¾‚µAƒfƒtƒHƒ‹ƒg‚Å‚Í‘‚«–ß‚³‚È‚¢
+    //ãŸã ã—ã€ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯æ›¸ãæˆ»ã•ãªã„
     mem_req_L1_to_L2.rw = 1'b0;
     mem_req_L1_to_L2.valid = 1'b0;
     
@@ -399,80 +399,80 @@ case(rstate)
         accessed_save_way0 <= pmt_L1_way0_dout.accessed;
         accessed_save_way1 <= pmt_L1_way1_dout.accessed;
         
-        //L1_way0‚Ìƒ^ƒO•”‚ªhit‚µ‚½
+        //L1_way0ã®ã‚¿ã‚°éƒ¨ãŒhitã—ãŸ
         if ( L1_way0_hit )
         begin
             cpu_res_L1.ready = 1'b1;
             cpu_res_L1.data = cpu_res_L1_way0.data;
             /*write hit*/
-            if (cpu_to_cache_request.rw)   //write‚·‚é‚È‚ç
+            if (cpu_to_cache_request.rw)   //writeã™ã‚‹ãªã‚‰
             begin 
                 /*read/modify cache line*/
                 pmt_req_L1_way0.we = '1;
                 data_req_L1_way0.we = 1'b1;
-                //ƒLƒƒƒbƒVƒ…‚É‘‚«‚ñ‚¾‚çA‚»‚Ì‚±‚Æ‚ğPMT‚Ì•û‚É”½‰f‚³‚¹‚Ä‚¨‚­ivalid‚Ædirty‚ğ—§‚Ä‚é‚Æ‚¢‚¤‚±‚Æj
+                //ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«æ›¸ãè¾¼ã‚“ã ã‚‰ã€ãã®ã“ã¨ã‚’PMTã®æ–¹ã«åæ˜ ã•ã›ã¦ãŠãï¼ˆvalidã¨dirtyã‚’ç«‹ã¦ã‚‹ã¨ã„ã†ã“ã¨ï¼‰
                 pmt_L1_way0_din.accessed = (more_accessed_max[1:1] == 1'b0) ? accessed_save_way0_logic + 1 : accessed_save_way1_logic + 1;
                 pmt_L1_way0_din.tag = pmt_L1_way0_dout.tag;
                 pmt_L1_way0_din.valid = 1'b1;
-                //‘‚«‚ñ‚¾‚©‚çdirty‚É‚È‚Á‚Ä‚¢‚é
+                //æ›¸ãè¾¼ã‚“ã ã‹ã‚‰dirtyã«ãªã£ã¦ã„ã‚‹
                 pmt_L1_way0_din.dirty = 1'b1;
             end
             
-            //‚à‚Æ‚É–ß‚é
+            //ã‚‚ã¨ã«æˆ»ã‚‹
             vstate = idle;
         end
         
-        //L1_way1‚Ìƒ^ƒO•”‚ªhit‚µ‚½
+        //L1_way1ã®ã‚¿ã‚°éƒ¨ãŒhitã—ãŸ
         else
         if ( L1_way1_hit )
         begin
             cpu_res_L1.ready = 1'b1;
             cpu_res_L1.data = cpu_res_L1_way1.data;
             /*write hit*/
-            if (cpu_to_cache_request.rw)   //write‚·‚é‚È‚ç
+            if (cpu_to_cache_request.rw)   //writeã™ã‚‹ãªã‚‰
             begin 
                 /*read/modify cache line*/
                 pmt_req_L1_way1.we = '1;
                 data_req_L1_way1.we = 1'b1;
-                //ƒLƒƒƒbƒVƒ…‚É‘‚«‚ñ‚¾‚çA‚»‚Ì‚±‚Æ‚ğPMT‚Ì•û‚É”½‰f‚³‚¹‚Ä‚¨‚­ivalid‚Ædirty‚ğ—§‚Ä‚é‚Æ‚¢‚¤‚±‚Æj
+                //ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«æ›¸ãè¾¼ã‚“ã ã‚‰ã€ãã®ã“ã¨ã‚’PMTã®æ–¹ã«åæ˜ ã•ã›ã¦ãŠãï¼ˆvalidã¨dirtyã‚’ç«‹ã¦ã‚‹ã¨ã„ã†ã“ã¨ï¼‰
                 pmt_L1_way1_din.accessed = (more_accessed_max[1:1] == 1'b0) ? accessed_save_way0_logic + 1 : accessed_save_way1_logic + 1;
                 pmt_L1_way1_din.tag = pmt_L1_way1_dout.tag; 
                 pmt_L1_way1_din.valid = 1'b1;
-                //‘‚«‚ñ‚¾‚©‚çdirty‚É‚È‚Á‚Ä‚¢‚é
+                //æ›¸ãè¾¼ã‚“ã ã‹ã‚‰dirtyã«ãªã£ã¦ã„ã‚‹
                 pmt_L1_way1_din.dirty = 1'b1;
             end
             
-            //‚à‚Æ‚É–ß‚é
+            //ã‚‚ã¨ã«æˆ»ã‚‹
             vstate = idle;
         end
         
-        //L1_way0 L1_way1 ‚Ç‚¿‚ç‚àhit‚µ‚È‚©‚Á‚½ê‡
+        //L1_way0 L1_way1 ã©ã¡ã‚‰ã‚‚hitã—ãªã‹ã£ãŸå ´åˆ
         else
-        if (LRU_logic == 1'b0)   //LRU‚Å‚Ç‚¿‚ç‚ğ’Ç‚¢o‚·‚©Œˆ‚ß‚ÄA
+        if (LRU_logic == 1'b0)   //LRUã§ã©ã¡ã‚‰ã‚’è¿½ã„å‡ºã™ã‹æ±ºã‚ã¦ã€
         begin
-            //PMT‚¾‚¯XV‚µ‚Ä‚¨‚­iƒf[ƒ^‚ª—ˆ‚é‘O‚ÉƒAƒNƒZƒX‚³‚ê‚é‚±‚Æ‚Í‚È‚¢‚©‚ç‘åä•vj
+            //PMTã ã‘æ›´æ–°ã—ã¦ãŠãï¼ˆãƒ‡ãƒ¼ã‚¿ãŒæ¥ã‚‹å‰ã«ã‚¢ã‚¯ã‚»ã‚¹ã•ã‚Œã‚‹ã“ã¨ã¯ãªã„ã‹ã‚‰å¤§ä¸ˆå¤«ï¼‰
             /*generate new tag*/
             pmt_req_L1_way0.we = 1'b1;
             pmt_L1_way0_din.valid = 1'b1;
             /*new tag*/
             pmt_L1_way0_din.tag = cpu_to_cache_request.addr[TAGMSB:TAGLSB];
-            //‘‚«‚Şê‡‚Ì‚İdirty‚É‚µ‚Ä‚¨‚­
+            //æ›¸ãè¾¼ã‚€å ´åˆã®ã¿dirtyã«ã—ã¦ãŠã
             pmt_L1_way0_din.dirty = cpu_to_cache_request.rw;
-            //¡‚Á‚Ä‚«‚½‚©‚çaccessed‚Í0‚É‚µ‚Ä‚¨‚­
+            //ä»ŠæŒã£ã¦ããŸã‹ã‚‰accessedã¯0ã«ã—ã¦ãŠã
             pmt_L1_way0_din.accessed = 
                 (more_accessed_max == 2'b00) ? accessed_save_way0_logic :
                 (more_accessed_max == 2'b01) ? 3'b000                   :
                 (more_accessed_max == 2'b10) ? accessed_save_way1_logic :
                                                3'b000                   ;
             
-            //XV‚µ‚È‚¢‚Ù‚¤‚àLRU(Accessed)‚ªmax‚É’B‚µ‚Ä‚¢‚½‚çƒŠƒZƒbƒg‚·‚é(AccessedˆÈŠO‚Í•Ï‚¦‚È‚¢)
+            //æ›´æ–°ã—ãªã„ã»ã†ã‚‚LRU(Accessed)ãŒmaxã«é”ã—ã¦ã„ãŸã‚‰ãƒªã‚»ãƒƒãƒˆã™ã‚‹(Accessedä»¥å¤–ã¯å¤‰ãˆãªã„)
             pmt_req_L1_way1.we = 1'b1;
             pmt_L1_way1_din.valid = pmt_L1_way1_dout.valid;
             pmt_L1_way1_din.tag = pmt_L1_way1_dout.tag;
             pmt_L1_way1_din.dirty = pmt_L1_way1_dout.dirty;
             pmt_L1_way1_din.accessed = (more_accessed_max[0:0] == 1'b1) ? 3'b000 : pmt_L1_way1_dout.accessed;
             
-            //‰ºˆÊƒLƒƒƒbƒVƒ…‚ÖŒü‚¯‚Äƒf[ƒ^‚ğ‚­‚ê‚Æ‚¢‚¤•K—v‚ª‚ ‚éB
+            //ä¸‹ä½ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã¸å‘ã‘ã¦ãƒ‡ãƒ¼ã‚¿ã‚’ãã‚Œã¨ã„ã†å¿…è¦ãŒã‚ã‚‹ã€‚
             mem_req_L1_to_L2.valid = 1'b1;
             /*compulsory miss or miss with clean block*/
             if (pmt_L1_way0_dout.valid == 1'b0 || pmt_L1_way0_dout.dirty == 1'b0)
@@ -491,30 +491,30 @@ case(rstate)
             end
         end
         else
-        if (LRU_logic == 1'b1)   //LRU‚Å‚Ç‚¿‚ç‚ğ’Ç‚¢o‚·‚©Œˆ‚ß‚ÄA
+        if (LRU_logic == 1'b1)   //LRUã§ã©ã¡ã‚‰ã‚’è¿½ã„å‡ºã™ã‹æ±ºã‚ã¦ã€
         begin
-            //PMT‚¾‚¯XV‚µ‚Ä‚¨‚­iƒf[ƒ^‚ª—ˆ‚é‘O‚ÉƒAƒNƒZƒX‚³‚ê‚é‚±‚Æ‚Í‚È‚¢‚©‚ç‘åä•vj
+            //PMTã ã‘æ›´æ–°ã—ã¦ãŠãï¼ˆãƒ‡ãƒ¼ã‚¿ãŒæ¥ã‚‹å‰ã«ã‚¢ã‚¯ã‚»ã‚¹ã•ã‚Œã‚‹ã“ã¨ã¯ãªã„ã‹ã‚‰å¤§ä¸ˆå¤«ï¼‰
             /*generate new tag*/
             pmt_req_L1_way1.we = 1'b1;
             pmt_L1_way1_din.valid = 1'b1;
             /*new tag*/
             pmt_L1_way1_din.tag = cpu_to_cache_request.addr[TAGMSB:TAGLSB];
-            //‘‚«‚Şê‡‚Ì‚İdirty‚É‚µ‚Ä‚¨‚­
+            //æ›¸ãè¾¼ã‚€å ´åˆã®ã¿dirtyã«ã—ã¦ãŠã
             pmt_L1_way1_din.dirty = cpu_to_cache_request.rw;
-            //¡‚Á‚Ä‚«‚½‚©‚çaccessed‚Í0‚É‚µ‚Ä‚¨‚­
+            //ä»ŠæŒã£ã¦ããŸã‹ã‚‰accessedã¯0ã«ã—ã¦ãŠã
             pmt_L1_way1_din.accessed = 
                 (more_accessed_max == 2'b00) ? accessed_save_way0_logic :
                 (more_accessed_max == 2'b01) ? 3'b000                   :
                 (more_accessed_max == 2'b10) ? accessed_save_way1_logic :
                                                3'b000                   ;
-            //XV‚µ‚È‚¢‚Ù‚¤‚àLRU(Accessed)‚ªmax‚É’B‚µ‚Ä‚¢‚½‚çƒŠƒZƒbƒg‚·‚é(AccessedˆÈŠO‚Í•Ï‚¦‚È‚¢)
+            //æ›´æ–°ã—ãªã„ã»ã†ã‚‚LRU(Accessed)ãŒmaxã«é”ã—ã¦ã„ãŸã‚‰ãƒªã‚»ãƒƒãƒˆã™ã‚‹(Accessedä»¥å¤–ã¯å¤‰ãˆãªã„)
             pmt_req_L1_way0.we = 1'b1;
             pmt_L1_way0_din.valid = pmt_L1_way0_dout.valid;
             pmt_L1_way0_din.tag = pmt_L1_way0_dout.tag;
             pmt_L1_way0_din.dirty = pmt_L1_way0_dout.dirty;
             pmt_L1_way0_din.accessed = (more_accessed_max[0:0] == 1'b1) ? 3'b000 : pmt_L1_way0_dout.accessed;
         
-            //‰ºˆÊƒLƒƒƒbƒVƒ…‚ÖŒü‚¯‚Äƒf[ƒ^‚ğ‚­‚ê‚Æ‚¢‚¤•K—v‚ª‚ ‚éB
+            //ä¸‹ä½ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã¸å‘ã‘ã¦ãƒ‡ãƒ¼ã‚¿ã‚’ãã‚Œã¨ã„ã†å¿…è¦ãŒã‚ã‚‹ã€‚
             mem_req_L1_to_L2.valid = 1'b1;
             /*compulsory miss or miss with clean block*/
             if (pmt_L1_way1_dout.valid == 1'b0 || pmt_L1_way1_dout.dirty == 1'b0)
@@ -543,7 +543,7 @@ case(rstate)
         begin
             if (LRU_logic == 1'b0)
             begin
-                //’Ç‚¢o‚·‚Ì‚ªway0‚È‚çL0‚Ì‘‚«‚Ş‚×‚«ƒCƒ“ƒfƒbƒNƒXs–Ú‚Éƒf[ƒ^‚ğŠi”[‚·‚é
+                //è¿½ã„å‡ºã™ã®ãŒway0ãªã‚‰L0ã®æ›¸ãè¾¼ã‚€ã¹ãã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹è¡Œç›®ã«ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹
                 /*update cache line data*/
                 data_req_L1_way0.we = 1'b1;
                 cache_L1_way0_din = mem_data.data;
@@ -551,13 +551,13 @@ case(rstate)
             else
             if (LRU_logic == 1'b1)
             begin
-                //’Ç‚¢o‚·‚Ì‚ªway0‚È‚çL0‚Ì‘‚«‚Ş‚×‚«ƒCƒ“ƒfƒbƒNƒXs–Ú‚Éƒf[ƒ^‚ğŠi”[‚·‚é
+                //è¿½ã„å‡ºã™ã®ãŒway0ãªã‚‰L0ã®æ›¸ãè¾¼ã‚€ã¹ãã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹è¡Œç›®ã«ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹
                 /*update cache line data*/
                 data_req_L1_way1.we = 1'b1;
                 cache_L1_way1_din = mem_data.data;
             end
             /*re-compare tag for write miss (need modify correct word)*/
-            vstate = allocate_wait;  //‚³‚ç‚Éã‘‚«‚·‚é‚È‚çcompare_tag‚Å‚â‚Á‚Ä‚­‚ê
+            vstate = allocate_wait;  //ã•ã‚‰ã«ä¸Šæ›¸ãã™ã‚‹ãªã‚‰compare_tagã§ã‚„ã£ã¦ãã‚Œ
         end 
     end
     

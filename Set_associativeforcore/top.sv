@@ -1,4 +1,4 @@
-//clock‚ğ¶¬‚µ‚Ä‚¢‚ë‚¢‚ë‚È•”•i‚É‚Â‚È‚°‚é(clockˆÈŠO‚Íno-touch)
+//clockï¿½ğ¶ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ë‚¢ï¿½ï¿½È•ï¿½ï¿½iï¿½É‚Â‚È‚ï¿½ï¿½ï¿½(clockï¿½ÈŠOï¿½ï¿½no-touch)
 
 module top (
     // DDR2
@@ -44,7 +44,7 @@ module top (
     assign dout_dram = cpu_res.data;
     assign ready_dram = cpu_res.ready;
 
-    // masteriCPU‘¤‚ÌFIFOj
+    // masterï¿½iCPUï¿½ï¿½ï¿½ï¿½FIFOï¿½j
     dram_test dram_test (
         .fifo(master_fifo),
         .sys_clk(sys_clk),
@@ -55,13 +55,13 @@ module top (
         .led_memory(led_memory)
     );
 
-    // fifo‚ğ¶¬‚·‚é
+    // fifoï¿½ğ¶ï¿½ï¿½ï¿½ï¿½ï¿½
     dram_buf dram_buf (
         .master(master_fifo),
         .slave(slave_fifo)
     );
 
-    // slaveiDRAM‘¤‚ÌFIFOj
+    // slaveï¿½iDRAMï¿½ï¿½ï¿½ï¿½FIFOï¿½j
     dram_controller dram_controller (
         // DDR2
         .ddr2_addr(ddr2_addr),

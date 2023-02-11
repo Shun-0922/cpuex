@@ -1,7 +1,7 @@
 `timescale 100ps/1ps
 `default_nettype none
 
-module test_all #(CLK_PER_HALF_BIT = 434) ();
+module test_all ();
   reg clk;
   reg rstn1;
   reg rstn2;
@@ -36,16 +36,16 @@ module test_all #(CLK_PER_HALF_BIT = 434) ();
     clk = 1'b0;
     rstn1 = 1'b0;
     rstn2 = 1'b0;
-    # 25
+    # 250
       rstn1 = 1'b1;
-    # 30
+    # 300
       rstn2 = 1'b1;
-    # 10000000
+    # 100000000
       $finish;
   end
 
   always begin
-    # 5
+    # 50
       clk <= ~clk;
   end
 endmodule
@@ -69,10 +69,10 @@ module test_top ();
   reg  sys_clk;
   reg  mem_clk;
   reg  rst;
-  reg  [26:0] addr_dram;
-  reg  [31:0] din_dram;
-  reg  rw_dram;
-  reg  valid_dram;
+  wire  [26:0] addr_dram;
+  wire  [31:0] din_dram;
+  wire  rw_dram;
+  wire  valid_dram;
   wire [31:0] dout_dram;
   wire ready_dram;
   wire led_memory;
@@ -82,32 +82,68 @@ module test_top ();
     sys_clk,mem_clk,rst,addr_dram,din_dram,rw_dram,valid_dram,dout_dram,ready_dram,led_memory
   );
 
+
+  ddr2 _ddr2 (
+        .ck(ddr2_ck_p),
+        .ck_n(ddr2_ck_n),
+        .cke(ddr2_cke),
+        .cs_n(ddr2_cs_n),
+        .ras_n(ddr2_ras_n),
+        .cas_n(ddr2_cas_n),
+        .we_n(ddr2_we_n),
+        .dm_rdqs(ddr2_dm),
+        .ba(ddr2_ba),
+        .addr(ddr2_addr),
+        .dq(ddr2_dq),
+        .dqs(ddr2_dqs_p),
+        .dqs_n(ddr2_dqs_n),
+        .rdqs_n(),
+        .odt(ddr2_odt)
+    );
+
+  reg [3:0] state;
+
+  assign addr_dram =
+    (state == 4'd0) ? 27'b0 :
+    (state == 4'd1) ? 27'b0 :
+    (state == 4'd2) ? 27'b0 :
+    (state == 4'd3) ? 27'd4 :
+    (state == 4'd4) ? 27'd4 : 27'd0;
+
+  assign din_dram = 
+    (state == 4'd0) ? 32'b0        :
+    (state == 4'd1) ? 32'h0f0f0f0f :
+    (state == 4'd2) ? 32'h0        :
+    (state == 4'd3) ? 32'h1e1e1e1e :
+    (state == 4'd4) ? 32'h0        : 32'd0;
+
+  assign valid_dram =
+    (ready_dram) ? 1'b0 :
+    (state == 4'd0) ? 1'b0 :
+    (state == 4'd1) ? 1'b1 :
+    (state == 4'd2) ? 1'b1 :
+    (state == 4'd3) ? 1'b1 :
+    (state == 4'd4) ? 1'b1 : 1'b0;
+
+  assign rw_dram =
+    (state == 4'd0) ? 1'b0 :
+    (state == 4'd1) ? 1'b1 :
+    (state == 4'd2) ? 1'b0 :
+    (state == 4'd3) ? 1'b1 :
+    (state == 4'd4) ? 1'b0 : 1'b0;
+
   initial begin
     sys_clk = 1'b1;
     mem_clk = 1'b1;
     rst = 1'b0;
-    rw_dram = 1'b0;
-    valid_dram = 1'b0;
-    addr_dram = 27'h0000000;
-    din_dram = 32'h00000000;
+    state = 4'd0;
     # 100
     rst = 1'b1;
     # 2000
-    rw_dram = 1'b1;
-    din_dram = 32'h33333333;
-    valid_dram = 1'b1;
-    addr_dram = 27'h2aaaaaa;
-    # 100
-    rw_dram = 1'b0;
-    din_dram = 32'h33333333;
-    valid_dram = 1'b1;
-    addr_dram = 27'h2aaaaaa;
-    
-    # 1000000
+    state = 4'd1;
+    # 10000000
       $finish;
   end
-
-
 
   always begin
     # 25
@@ -117,6 +153,12 @@ module test_top ();
   always begin
     # 50
       sys_clk <= ~sys_clk;
+  end
+
+  always @(posedge sys_clk) begin
+    if (ready_dram) begin
+      state <= state + 4'd1;
+    end
   end
 
 endmodule
