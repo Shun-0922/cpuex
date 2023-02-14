@@ -61,10 +61,10 @@ module io #(CLK_PER_HALF_BIT = 100)
   wire [7:0]  pixel_10;       
   wire [7:0]  pixel_1;        
   wire [31:0] pixels;        //how many pixels                                         
-  assign pixel_100 = 8'd1;                                                 
-  assign pixel_10  = 8'd2;                                                 
-  assign pixel_1   = 8'd8;                                                 
-  assign pixels    = 32'd16384; 
+  assign pixel_100 = 8'd2;                                                 
+  assign pixel_10  = 8'd5;                                                 
+  assign pixel_1   = 8'd6;                                                 
+  assign pixels    = 32'd65536; 
   
   reg [31:0] output_io_reg;
   assign output_io = output_io_reg;
@@ -202,7 +202,7 @@ module io #(CLK_PER_HALF_BIT = 100)
         if (core_end) begin
           status <= status + 16'd16;
         end 
-        addr_io_reg <= 32'd16384;              //where the output is (words)
+        addr_io_reg <= 32'd65536;              //where the output is (words)
       end else if (status == 16'd4016) begin sdata <= large_p;              status <= status + 16'd1; 
       end else if (status == 16'd4032) begin sdata <= number_0 + 8'd3;      status <= status + 16'd1;
       end else if (status == 16'd4048) begin sdata <= newline;              status <= status + 16'd1;
@@ -218,10 +218,12 @@ module io #(CLK_PER_HALF_BIT = 100)
       end else if (status == 16'd4208) begin sdata <= number_0 + 8'd5;      status <= status + 16'd1;
       end else if (status == 16'd4224) begin sdata <= number_0 + 8'd5;      status <= status + 16'd1;
       end else if (status == 16'd4240) begin sdata <= newline;              status <= status + 16'd1; 
-      end else if (status == 16'd4256) begin memread_io_reg <= 1'b1; status <= status + 16'd16;
-      end else if (status == 16'd4272) begin memread_io_reg <= 1'b0; status <= status + 16'd16;  addr_io_reg <= addr_io_reg + 32'd1;
+      end else if (status == 16'd4256) begin memread_io_reg <= 1'b1; status <= status + 16'd32;
+      //end else if (status == 16'd4272) begin memread_io_reg <= 1'b0; status <= status + 16'd16;  addr_io_reg <= addr_io_reg + 32'd1;
       end else if (status == 16'd4288) begin
         if (data_ready_io) begin
+          memread_io_reg <= 1'b0;
+          addr_io_reg <= addr_io_reg + 32'd1;
           color <= data_from_memory_io[7:0];
           status <= status + 16'd16;
         end 
@@ -272,7 +274,7 @@ module io #(CLK_PER_HALF_BIT = 100)
       end else if (status == 16'd4432) begin status <= status - 16'd176;
       end else if (status == 16'd4448) begin sdata <= newline;   status <= status + 16'd1;
       end else if (status == 16'd4464) begin
-        if (addr_io != 32'd16384 + pixels + pixels + pixels) begin
+        if (addr_io != 32'd65536 + pixels + pixels + pixels) begin
           status <= status - 16'd208;
         end else begin
           status <= status + 16'd16; 
@@ -303,9 +305,9 @@ module io_computer_side #(CLK_PER_HALF_BIT = 100)
   wire ferr;
 
   wire [31:0] program_bytes;
-  assign program_bytes = 32'd128;
+  assign program_bytes = 32'd8;
 
-  reg [31:0] ram [0:31/**/];
+  reg [31:0] ram [0:1/**/];
 
 
   reg [15:0] status;
@@ -320,7 +322,7 @@ module io_computer_side #(CLK_PER_HALF_BIT = 100)
   reg [31:0] program_buffer;
 
   initial begin
-    $readmemb("fpu_test1.mem", ram);
+    $readmemb("increment.mem", ram);
   end
 
   always @(posedge clk) begin
@@ -361,14 +363,14 @@ module io_computer_side #(CLK_PER_HALF_BIT = 100)
       end else if (status == 16'd80) begin sdata <= program_bytes[31:24];           status <= status + 16'd1;
       end else if (status == 16'd96) begin status <= 16'd112;
       end else if (status == 16'd112) begin
-        program_buffer <= ram[counter[4/**/:0]];
+        program_buffer <= ram[counter[0]];
         status <= 16'd128;
       end else if (status == 16'd128) begin sdata <= program_buffer[7:0];           status <= status + 16'd1;
       end else if (status == 16'd144) begin sdata <= program_buffer[15:8];          status <= status + 16'd1;
       end else if (status == 16'd160) begin sdata <= program_buffer[23:16];         status <= status + 16'd1;
       end else if (status == 16'd176) begin sdata <= program_buffer[31:24];         status <= status + 16'd1;
       end else if (status == 16'd192) begin
-        if (counter[4/**/:0] != 31/**/) begin
+        if (counter[0] != 1'b1/**/) begin
           counter <= counter + 32'b1;
           status <= status - 16'd80;
         end else begin

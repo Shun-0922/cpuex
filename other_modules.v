@@ -65,7 +65,7 @@ module ifid
   reg [31:0] pc_3;
   reg [31:0] instruction;
   reg [1:0] record_flush;
-  reg [1:0] stall_count;
+  reg [2:0] stall_state;
   reg [31:0] next1;
   reg [31:0] next2;
   assign pc_id = pc_3;
@@ -78,17 +78,16 @@ module ifid
       pc_3 <= 32'b0;
       instruction <= 32'b0;
       record_flush <= 2'b0;
-      stall_count <= 2'b0;
-      next1 <= 32'd3;
-      next2 <= 32'd3;
+      stall_state <= 2'b0;
+      next1 <= 32'd0;
+      next2 <= 32'd0;
     end else if (ifidwrite || ~data_ready_mem || ~alu_ready) begin
-      if (stall_count == 2'b00) begin
-        stall_count <= stall_count + 2'b01;
-        next1 <= instruction_if;
-      end else if (stall_count == 2'b01) begin
-        stall_count <= stall_count + 2'b01;
-        next2 <= instruction_if;
-      end
+      if          (stall_state == 3'd0) begin stall_state <= 3'd1; next1 <= instruction_if;
+      end else if (stall_state == 3'd1) begin stall_state <= 3'd3; next2 <= instruction_if;
+      end else if (stall_state == 3'd2) begin stall_state <= 3'd1;
+      end else if (stall_state == 3'd3) begin stall_state <= 3'd3;
+      end else if (stall_state == 3'd4) begin stall_state <= 3'd3; next2 <= instruction_if;
+      end 
     end else if (if_flush) begin
       pc_1 <= pc_if;
       pc_2 <= pc_1;
@@ -111,18 +110,12 @@ module ifid
       pc_1 <= pc_if;
       pc_2 <= pc_1;
       pc_3 <= pc_2;
-      if (next1 == 32'd3) begin
-        instruction <= instruction_if;
-      end else begin
-        instruction <= next1;
-        next1 <= next2;
-        next2 <= 32'd3;
-      end
-      if (stall_count == 2'b01) begin
-        stall_count <= stall_count - 2'b01;
-      end else if (stall_count == 2'b10) begin
-        stall_count <= stall_count - 2'b01;
-      end
+      if          (stall_state == 3'd0) begin stall_state <= 3'd0; instruction <= instruction_if;
+      end else if (stall_state == 3'd1) begin stall_state <= 3'd2; instruction <= next1;          next1 <= instruction_if; 
+      end else if (stall_state == 3'd2) begin stall_state <= 3'd0; instruction <= next1;          next1 <= 32'd0;
+      end else if (stall_state == 3'd3) begin stall_state <= 3'd4; instruction <= next1;          next1 <= next2;           next2 <= 32'd0;
+      end else if (stall_state == 3'd4) begin stall_state <= 3'd0; instruction <= next1;          next1 <= 32'd0;
+      end 
     end
   end
 

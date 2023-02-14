@@ -102,10 +102,10 @@ module data_ram
   wire readyb;
   wire ready_dummy;
 
-  /********************************************
+  /********************************************/
   assign doutb = dout_dram;
   assign readyb = ready_dram;
-  /********************************************/
+  /********************************************
   assign doutb = dout_dummy;
   assign readyb = ready_dummy;
   /********************************************/
@@ -115,7 +115,7 @@ module data_ram
   assign wea =           (addr < 32'd16384) ? memwrite : 1'b0;
   assign rw_dram =       (addr < 32'd16384) ? 1'b0 : memwrite;
   assign addra =         (addr < 32'd16384) ? addr[13:2] : 12'b0;
-  assign addr_dram =     (addr < 32'd16384) ? 27'b0 : addr[26:0];
+  assign addr_dram =     (addr < 32'd16384) ? 27'b0 : addr[27:1];
   assign dina =          (addr < 32'd16384) ? din : 32'b0;
   assign din_dram =      (addr < 32'd16384) ? 32'b0 : din;
   assign dout =          (addr < 32'd16384) ? douta : doutb;
@@ -159,8 +159,8 @@ module data_ram
     (state2 == 2'd2) ? 3'd4 :
     (state2 == 1'd1) ? 3'd2 : 3'd1;
 
-  assign valid = (state1 == 3'd1 || state1 == 3'd2);
-  assign data_ready = ~valid;
+  assign valid = (state1 == 3'd1 || state1 == 3'd2 || state1 == 3'd3);
+  assign data_ready = (state1 == 3'd0 || state1 == 3'd3 || state1 == 3'd4);
 
 
   reg [1:0] readya_reg;
@@ -185,7 +185,7 @@ module data_ram
 
 
 
-  /****************************************************************/
+  /****************************************************************
 
   wire clk_dummy;
   wire en_dummy;
@@ -200,21 +200,21 @@ module data_ram
   assign din_dummy = din_dram;
 
 
-  reg [3:0] ready_dummy_reg;
+  reg [7:0] ready_dummy_reg;
   assign ready_dummy = 
     (~memread && ~memwrite) ? 1'b0 :  
-    (ready_dummy_reg == 4'b1111) ? 1'b1 : 1'b0;
+    (ready_dummy_reg == 8'd2) ? 1'b1 : 1'b0;
 
   always @(posedge clk) begin
     if (~rstn) begin
       ready_dummy_reg <= 2'b00;
     end else begin
       if (state1 == 3'd1) begin
-        ready_dummy_reg <= 4'd1;
-      end else if (ready_dummy_reg == 4'b1111) begin
-        ready_dummy_reg <= 4'd0;
-      end else if (ready_dummy_reg != 4'd0) begin
-        ready_dummy_reg <= ready_dummy_reg + 4'd1;
+        ready_dummy_reg <= 8'd1;
+      end else if (ready_dummy_reg == 8'd2) begin
+        ready_dummy_reg <= 8'd0;
+      end else if (ready_dummy_reg != 8'd0) begin
+        ready_dummy_reg <= ready_dummy_reg + 8'd1;
       end 
     end
   end

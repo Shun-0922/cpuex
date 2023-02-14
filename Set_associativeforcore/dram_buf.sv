@@ -1,4 +1,4 @@
-
+//fifoを生で触る（恐らくno-touch）
 
 module dram_buf (
     master_fifo.fifo master,

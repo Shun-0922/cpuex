@@ -5,7 +5,7 @@ module core_wrapper
     input wire uart_txd_in,
     output wire uart_rxd_out,
     output wire [15:0] led
-    /*dram*************************************************,
+    /*dram*************************************************/,
     output wire [12:0] ddr2_addr,
     output wire [2:0] ddr2_ba,
     output wire ddr2_cas_n,
@@ -41,9 +41,7 @@ module core_wrapper
   //top(memory)
   wire sys_clk;
   wire mem_clk;
-  wire rst;
-  assign rst = ~cpu_resetn;
-
+  
   //clk_wizard
   wire clk_in1;
   wire clk_out1;
@@ -130,7 +128,7 @@ module core_wrapper
       .valid_dram(valid_dram)
     );
 
-/*************************************************************
+/*************************************************************/
   top _top 
     (
       .ddr2_addr(ddr2_addr),
@@ -148,15 +146,14 @@ module core_wrapper
       .ddr2_dm(ddr2_dm),
       .ddr2_odt(ddr2_odt),
       .sys_clk(sys_clk),
-      .mem_clk(mem_clk),
-      .rst(rst),
-      .addr_dram(addr_dram),
-      .din_dram(din_dram),
-      .rw_dram(rw_dram),
-      .valid_dram(valid_dram),
-      .dout_dram(dout_dram),
-      .ready_dram(ready_dram),
-      .led_memory(led_memory)
+      .mig_clk(mem_clk),
+      .rstn(rstn),
+      .cpu_req_addr(addr_dram),
+      .cpu_req_data(din_dram),
+      .cpu_req_rw(rw_dram),
+      .cpu_req_valid(valid_dram),
+      .cpu_res_data(dout_dram),
+      .cpu_res_ready(ready_dram)
     );
     /******************************************************/
 

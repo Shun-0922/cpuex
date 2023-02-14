@@ -1,4 +1,4 @@
-
+//migを生で触る（恐らくno-touch）
 
 module dram_controller (
     // DDR2

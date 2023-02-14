@@ -8,7 +8,7 @@ module test_all ();
   wire core_to_comp;
   wire comp_to_core;
   wire [15:0] led;
-  /************dram*************
+  /************dram*************/
   wire [12:0] ddr2_addr;
   wire [2:0] ddr2_ba;
   wire ddr2_cas_n;
@@ -28,10 +28,28 @@ module test_all ();
   io_computer_side _io_computer_side(core_to_comp,comp_to_core,clk,rstn1);
   core_wrapper _core_wrapper
     (
-      clk,rstn2,comp_to_core,core_to_comp,led/**,
+      clk,rstn2,comp_to_core,core_to_comp,led/**/,
       ddr2_addr,ddr2_ba,ddr2_cas_n,ddr2_ck_n,ddr2_ck_p,ddr2_cke,ddr2_ras_n,ddr2_we_n,ddr2_dq,ddr2_dqs_n,ddr2_dqs_p,ddr2_cs_n,ddr2_dm,ddr2_odt/**/
     );
-
+/***************************************************/
+  ddr2 _ddr2 (
+    .ck(ddr2_ck_p),
+    .ck_n(ddr2_ck_n),
+    .cke(ddr2_cke),
+    .cs_n(ddr2_cs_n),
+    .ras_n(ddr2_ras_n),
+    .cas_n(ddr2_cas_n),
+    .we_n(ddr2_we_n),
+    .dm_rdqs(ddr2_dm),
+    .ba(ddr2_ba),
+    .addr(ddr2_addr),
+    .dq(ddr2_dq),
+    .dqs(ddr2_dqs_p),
+    .dqs_n(ddr2_dqs_n),
+    .rdqs_n(),
+    .odt(ddr2_odt)
+  );
+/****************************************************/
   initial begin
     clk = 1'b0;
     rstn1 = 1'b0;
@@ -75,11 +93,31 @@ module test_top ();
   wire  valid_dram;
   wire [31:0] dout_dram;
   wire ready_dram;
-  wire led_memory;
 
   top _top(
-    ddr2_addr,ddr2_ba,ddr2_cas_n,ddr2_ck_n,ddr2_ck_p,ddr2_cke,ddr2_ras_n,ddr2_we_n,ddr2_dq,ddr2_dqs_n,ddr2_dqs_p,ddr2_cs_n,ddr2_dm,ddr2_odt,
-    sys_clk,mem_clk,rst,addr_dram,din_dram,rw_dram,valid_dram,dout_dram,ready_dram,led_memory
+    ddr2_addr,
+    ddr2_ba,
+    ddr2_cas_n,
+    ddr2_ck_n,
+    ddr2_ck_p,
+    ddr2_cke,
+    ddr2_ras_n,
+    ddr2_we_n,
+    ddr2_dq,
+    ddr2_dqs_n,
+    ddr2_dqs_p,
+    ddr2_cs_n,
+    ddr2_dm,
+    ddr2_odt,
+    sys_clk,
+    mem_clk,
+    rst,
+    addr_dram,
+    din_dram,
+    rw_dram,
+    valid_dram,
+    dout_dram,
+    ready_dram
   );
 
 

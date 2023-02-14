@@ -1,4 +1,4 @@
-//clock�𐶐����Ă��낢��ȕ��i�ɂȂ���(clock�ȊO��no-touch)
+//clockを生成していろいろな部品につなげる(clock以外はno-touch)
 
 module top (
     // DDR2
@@ -18,15 +18,14 @@ module top (
     output wire [0:0] ddr2_odt,
     // others
     input logic sys_clk,
-    input logic mem_clk,
-    input logic rst,
-    input logic [26:0] addr_dram,
-    input logic [31:0] din_dram,
-    input logic [ 0:0] rw_dram,
-    input logic [ 0:0] valid_dram,
-    output logic [31:0] dout_dram,
-    output logic [ 0:0] ready_dram,
-    output logic led_memory
+    input logic mig_clk,
+    input logic rstn,
+    input logic [26:0] cpu_req_addr,
+    input logic [31:0] cpu_req_data,
+    input logic [ 0:0] cpu_req_rw,
+    input logic [ 0:0] cpu_req_valid,
+    output logic [31:0] cpu_res_data,
+    output logic [ 0:0] cpu_res_ready
 );
 
     // interfaces
@@ -36,32 +35,30 @@ module top (
     cpu_req_type cpu_to_cache_request;
     cpu_result_type cpu_res;
     
-    assign cpu_to_cache_request.addr = addr_dram;
-    assign cpu_to_cache_request.data = din_dram;
-    assign cpu_to_cache_request.rw = rw_dram;
-    assign cpu_to_cache_request.valid = valid_dram;
+    assign cpu_to_cache_request.addr = cpu_req_addr;
+    assign cpu_to_cache_request.data = cpu_req_data;
+    assign cpu_to_cache_request.rw = cpu_req_rw;
+    assign cpu_to_cache_request.valid = cpu_req_valid;
     
-    assign dout_dram = cpu_res.data;
-    assign ready_dram = cpu_res.ready;
+    assign cpu_res_data = cpu_res.data;
+    assign cpu_res_ready = cpu_res.ready;
 
-    // master�iCPU����FIFO�j
+    // master（CPU側のFIFO）
     dram_test dram_test (
         .fifo(master_fifo),
         .sys_clk(sys_clk),
-        .mem_clk(mem_clk),
-        .rst(rst),
+        .rstn(rstn),
         .cpu_to_cache_request(cpu_to_cache_request),
-        .cpu_res(cpu_res),
-        .led_memory(led_memory)
+        .cpu_res(cpu_res)
     );
 
-    // fifo�𐶐�����
+    // fifoを生成する
     dram_buf dram_buf (
         .master(master_fifo),
         .slave(slave_fifo)
     );
 
-    // slave�iDRAM����FIFO�j
+    // slave（DRAM側のFIFO）
     dram_controller dram_controller (
         // DDR2
         .ddr2_addr(ddr2_addr),
@@ -79,7 +76,7 @@ module top (
         .ddr2_dm(ddr2_dm),
         .ddr2_odt(ddr2_odt),
         // others
-        .sys_clk(mem_clk),
+        .sys_clk(mig_clk),
         .fifo(slave_fifo)
     );
 endmodule
