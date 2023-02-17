@@ -102,10 +102,10 @@ module data_ram
   wire readyb;
   wire ready_dummy;
 
-  /********************************************/
+  /********************************************
   assign doutb = dout_dram;
   assign readyb = ready_dram;
-  /********************************************
+  /********************************************/
   assign doutb = dout_dummy;
   assign readyb = ready_dummy;
   /********************************************/
@@ -185,7 +185,7 @@ module data_ram
 
 
 
-  /****************************************************************
+  /****************************************************************/
 
   wire clk_dummy;
   wire en_dummy;
@@ -196,7 +196,7 @@ module data_ram
   assign clk_dummy = clk;
   assign en_dummy = 1'b1;
   assign we_dummy = rw_dram;
-  assign addr_dummy = addr_dram[17:2];
+  assign addr_dummy = addr_dram[16:1];
   assign din_dummy = din_dram;
 
 

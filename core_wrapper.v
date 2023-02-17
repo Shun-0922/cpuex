@@ -5,7 +5,7 @@ module core_wrapper
     input wire uart_txd_in,
     output wire uart_rxd_out,
     output wire [15:0] led
-    /*dram*************************************************/,
+    /*dram*************************************************,
     output wire [12:0] ddr2_addr,
     output wire [2:0] ddr2_ba,
     output wire ddr2_cas_n,
@@ -128,7 +128,7 @@ module core_wrapper
       .valid_dram(valid_dram)
     );
 
-/*************************************************************/
+/*************************************************************
   top _top 
     (
       .ddr2_addr(ddr2_addr),

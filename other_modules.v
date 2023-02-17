@@ -2,6 +2,8 @@ module programcounter
   (
     input wire clk,
     input wire rstn,
+    input wire [6:0] opcode_ex,
+    input wire [31:0] src_a,
     input wire [31:0] imm_ex,
     input wire branchtrue,
     input wire [31:0] pc_ex,
@@ -16,7 +18,10 @@ module programcounter
   
   wire [31:0] next_pc;
   wire [31:0] pc_branch;
-  assign pc_branch = $signed(pc_ex) + $signed(imm_ex << 1);
+  assign pc_branch = 
+    (opcode_ex == 7'b1100111) ? 
+      ($signed(src_a) + $signed(imm_ex)) :
+      ($signed(pc_ex) + $signed(imm_ex));
   assign next_pc = branchtrue ? pc_branch : pc + 32'd4;
   assign pc_if = pc;
   always @(posedge clk) begin
@@ -37,14 +42,26 @@ module immediate_generator
     output wire [31:0] imm_id
   );
   wire [6:0] opcode;
-  wire [11:0] imm_short;
   
   assign opcode = instruction_id[6:0];
-  assign imm_short = (opcode == 7'b1100011) ? {instruction_id[31],instruction_id[7],instruction_id[30:25],instruction_id[11:8]} :
-                     (opcode == 7'b0100011 || opcode == 7'b0100111) ? {instruction_id[31:25],instruction_id[11:7]} :
-                     (opcode == 7'b0000011 || opcode == 7'b0010011 || opcode == 7'b0000111) ? {instruction_id[31:20]} : 12'b0;
-  assign imm_id = (imm_short[11] == 1'b1) ? {20'hfffff, imm_short} : {20'b0, imm_short};
-  
+  assign imm_id = 
+    (opcode == 7'b1100011) ? 
+      ((instruction_id[31]) ? 
+        {19'h7ffff,instruction_id[31],instruction_id[7],instruction_id[30:25],instruction_id[11:8],1'b0} :
+        {19'b0,instruction_id[31],instruction_id[7],instruction_id[30:25],instruction_id[11:8],1'b0}) :
+    (opcode == 7'b0100011 || opcode == 7'b0100111) ? 
+      ((instruction_id[31]) ?
+        {20'hfffff,instruction_id[31:25],instruction_id[11:7]} :
+        {20'b0,instruction_id[31:25],instruction_id[11:7]}) :
+    (opcode == 7'b0000011 || opcode == 7'b0010011 || opcode == 7'b0000111 || opcode == 7'b1100111) ? 
+      ((instruction_id[31]) ?
+        {20'hfffff,instruction_id[31:20]} : 
+        {20'b0,instruction_id[31:20]}) :
+    (opcode == 7'b1101111) ?
+      ((instruction_id[31]) ?
+        {11'h7ff,instruction_id[31],instruction_id[19:12],instruction_id[20],instruction_id[30:21],1'b0} :
+        {11'b0,instruction_id[31],instruction_id[19:12],instruction_id[20],instruction_id[30:21],1'b0}) : 32'b0;
+      
 endmodule
 
 module ifid
@@ -374,10 +391,10 @@ module forwarding_unit
     output wire [1:0] forward_a,
     output wire [1:0] forward_b
   );
-  assign forward_a = (((regwrite_mem == 2'b01 && rs1_fpu_ex == 1'b0) || (regwrite_mem == 2'b10 && rs1_fpu_ex == 1'b1)) && rd_mem != 5'b0 && rs1_ex == rd_mem) ? 2'b10 :
-                     (((regwrite_wb == 2'b01 && rs1_fpu_ex == 1'b0) || (regwrite_wb == 2'b10 && rs1_fpu_ex == 1'b1)) && rd_wb != 5'b0 && rd_wb == rs1_ex) ? 2'b01 : 2'b00;
-  assign forward_b = (((regwrite_mem == 2'b01 && rs2_fpu_ex == 1'b0) || (regwrite_mem == 2'b10 && rs2_fpu_ex == 1'b1)) && rd_mem != 5'b0 && rs2_ex == rd_mem) ? 2'b10 :
-                     (((regwrite_wb == 2'b01 && rs2_fpu_ex == 1'b0) || (regwrite_wb == 2'b10 && rs2_fpu_ex == 1'b1)) && rd_wb != 5'b0 && rd_wb == rs2_ex) ? 2'b01 : 2'b00;
+  assign forward_a = (((regwrite_mem == 2'b01 && rs1_fpu_ex == 1'b0 && rd_mem != 5'b0) || (regwrite_mem == 2'b10 && rs1_fpu_ex == 1'b1 && rd_mem != 5'd31))  && rs1_ex == rd_mem) ? 2'b10 :
+                     (((regwrite_wb == 2'b01 && rs1_fpu_ex == 1'b0 && rd_wb != 5'b0) || (regwrite_wb == 2'b10 && rs1_fpu_ex == 1'b1 && rd_wb != 5'd31)) && rd_wb == rs1_ex) ? 2'b01 : 2'b00;
+  assign forward_b = (((regwrite_mem == 2'b01 && rs2_fpu_ex == 1'b0 && rd_mem != 5'b0) || (regwrite_mem == 2'b10 && rs2_fpu_ex == 1'b1 && rd_mem != 5'd31)) && rs2_ex == rd_mem) ? 2'b10 :
+                     (((regwrite_wb == 2'b01 && rs2_fpu_ex == 1'b0 && rd_wb != 5'b0) || (regwrite_wb == 2'b10 && rs2_fpu_ex == 1'b1 && rd_wb != 5'd31)) && rd_wb == rs2_ex) ? 2'b01 : 2'b00;
 endmodule
 
 

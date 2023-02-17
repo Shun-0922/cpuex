@@ -4,6 +4,7 @@ module alu
     input wire clk,
     input wire mem_clk,
     input wire rstn,
+    input wire [31:0] pc_ex,
     input wire [31:0] src_a,
     input wire [31:0] src_b,
     input wire [4:0] alu_control,
@@ -16,15 +17,19 @@ module alu
   wire fpu_ready;
 
   assign alu_ready = fpu_ready;
-  assign branch_alu = (alu_result_ex == 32'b0) ? 1'b1 : 1'b0;
+  assign branch_alu = 
+    (alu_control == 5'b01000) ?
+      ((src_a == src_b) ? 1'b1 : 1'b0) :
+    (alu_control == 5'b01001) ?
+      ((src_a < src_b) ? 1'b0 : 1'b1) :
+    (alu_control == 5'b00111) ? 1'b1 : 1'b0;
   assign alu_result_ex = 
-    //(alu_control == 5'b00000) ? src_a & src_b :
-    //(alu_control == 5'b00001) ? src_a | src_b :
+    (alu_control == 5'b00000) ? src_a << src_b :
+    (alu_control == 5'b00001) ? src_a >> src_b :
     (alu_control == 5'b00010) ? $signed(src_a) + $signed(src_b) :
     (alu_control == 5'b00110) ? $signed(src_a) - $signed(src_b) : 
+    (alu_control == 5'b00111) ? pc_ex + 32'd4 :
     (alu_control[4])          ? fpu_result : 
-    //(alu_control == 5'b10000) ? $signed(src_a) + $signed(src_b) :
-    //(alu_control == 5'b10001) ? $signed(src_a) - $signed(src_b) :
     32'b0;
 
   fpu _fpu
@@ -150,7 +155,20 @@ module alu_controller
     (alu_op_ex == 2'd1) ? 5'd6 :
     (alu_op_ex == 2'd3) ? funct7_ex[6:2] + 5'b10000 :
     (
-      (funct7_ex == 7'b0100000) ? 5'd6 : 5'd2
+      (opcode_ex == 7'b0110011) ?
+       ((funct3_ex == 3'b000) ?
+          ((funct7_ex == 7'b0000000) ? 5'd2 : 5'd6) :
+        (funct3_ex == 3'b001) ? 5'd0 :
+        (funct3_ex == 3'b101) ? 5'd1 : 5'd3) :
+      (opcode_ex == 7'b0010011) ?
+       ((funct3_ex == 3'b000) ? 5'd2 :
+        (funct3_ex == 3'b001) ? 5'd0 :
+        (funct3_ex == 3'b101) ? 5'd1 : 5'd3) :
+      (opcode_ex == 7'b1100011) ?
+       ((funct3_ex == 3'b000) ? 5'd8 :
+        (funct3_ex == 3'b101) ? 5'd9 : 5'd3) :
+      (opcode_ex == 7'b1100111) ? 5'd7 :
+      (opcode_ex == 7'b1101111) ? 5'd7 : 5'd3
     );
   
 endmodule

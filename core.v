@@ -147,6 +147,7 @@ alu _alu
     .clk(clk),
     .mem_clk(mem_clk),
     .rstn(rstn),
+    .pc_ex(pc_ex),
     .src_a(src_a),
     .src_b(src_b),
     .alu_control(alu_control),
@@ -244,6 +245,8 @@ programcounter _programcounter
   (
     .clk(clk),
     .rstn(rstn),
+    .opcode_ex(opcode_ex),
+    .src_a(src_a),
     .imm_ex(imm_ex),
     .branchtrue(branchtrue),
     .pc_ex(pc_ex),

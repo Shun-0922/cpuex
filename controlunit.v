@@ -6,13 +6,15 @@ module controlunit
   );
   assign controlunit_out = 
   (opcode_id == 7'b0000000) ? 11'b00000000000 :             //nop
-  (opcode_id == 7'b0010011) ? 11'b10010000000 :             //addi
+  (opcode_id == 7'b0010011) ? 11'b10010001000 :             //addi
   (opcode_id == 7'b0110011) ? 11'b00010001000 :             //add, sub
   (opcode_id == 7'b0000011) ? 11'b11011000000 :             //lw
   (opcode_id == 7'b0100011) ? 11'b10000100000 :             //sw
-  (opcode_id == 7'b1100011) ? 11'b00000010100 :             //beq
+  (opcode_id == 7'b1100011) ? 11'b00000011000 :             //beq
   (opcode_id == 7'b0000111) ? 11'b11101000000 :             //flw
   (opcode_id == 7'b0100111) ? 11'b10000100001 :             //fsw
+  (opcode_id == 7'b1100111) ? 11'b00010011000 :
+  (opcode_id == 7'b1101111) ? 11'b00010011000 : 
   (opcode_id == 7'b1010011) ? (
     (funct7_id == 7'b0011000) ? 11'b00010001110 :
     (funct7_id == 7'b0011100) ? 11'b00100001100 : 11'b00100001111) :             //fpu
