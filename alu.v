@@ -61,7 +61,7 @@ module fpu
     output wire fpu_ready
   );
 
-  wire [7:0] opcode_wire;
+  wire [9:0] opcode_wire;
   wire out_valid;
   wire [31:0] x1_wire;
   wire [31:0] x2_wire;
@@ -71,7 +71,7 @@ module fpu
   wire unf;
   wire [31:0] y;
 
-  reg [7:0] opcode;
+  reg [9:0] opcode;
   reg [31:0] x1;
   reg [31:0] x2;
   
@@ -87,15 +87,18 @@ module fpu
     (status2 == 2'b01) ? 3'b010 : 3'b001;
 
   assign opcode_wire = 
-    (status1 != 3'd1) ? 8'b0 :
-    (alu_control == 5'b10000) ? 8'b00000001 :
-    (alu_control == 5'b10001) ? 8'b00000010 :
-    (alu_control == 5'b10010) ? 8'b00000100 :
-    (alu_control == 5'b10011) ? 8'b00001000 :
-    (alu_control == 5'b11011) ? 8'b00010000 :
-    (alu_control == 5'b10101) ? 8'b10000000 :
-    (alu_control == 5'b10110) ? 8'b00100000 :
-    (alu_control == 5'b10111) ? 8'b01000000 : 8'b0;
+    (status1 != 3'd1) ? 10'b0 :
+    (alu_control == 5'b10000) ? 10'b0000000001 :
+    (alu_control == 5'b10001) ? 10'b0000000010 :
+    (alu_control == 5'b10010) ? 10'b0000000100 :
+    (alu_control == 5'b10011) ? 10'b0000001000 :
+    (alu_control == 5'b11011) ? 10'b0000010000 :
+    (alu_control == 5'b10110) ? 10'b0000100000 :
+    (alu_control == 5'b10111) ? 10'b0001000000 : 
+    (alu_control == 5'b10101) ? 10'b0010000000 :
+    (alu_control == 5'b11001) ? 10'b0100000000 :
+    (alu_control == 5'b11000) ? 10'b1000000000 :
+    10'b0;
 
   fpu_top _fpu_top
     (

@@ -115,12 +115,12 @@ module itof
           stage23_valid <= 1'b0; //reset to idle state
       end
       else begin 
-         stage12_s     = stage1_s;
-         stage12_x_abs = stage1_x_abs;
-         stage12_shamt = stage1_shamt;
-         stage23_y = stage2_y;
-         stage12_valid = stage1_valid;
-         stage23_valid = stage2_valid;
+         stage12_s     <= stage1_s;
+         stage12_x_abs <= stage1_x_abs;
+         stage12_shamt <= stage1_shamt;
+         stage23_y <= stage2_y;
+         stage12_valid <= stage1_valid;
+         stage23_valid <= stage2_valid;
       end
    end
    

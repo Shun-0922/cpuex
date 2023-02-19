@@ -24,7 +24,7 @@ module fpu_top
 (
     input  bit           sys_clk,
     input  bit           rstn,
-    input  logic [7:0]   opcode,
+    input  logic [9:0]   opcode,
     input  logic [31:0]  x1,
     input  logic [31:0]  x2,
     output logic [31:0]  y,
@@ -32,31 +32,33 @@ module fpu_top
     output logic         unf,
     output logic [0:0]   out_valid
 );
-    
-    logic [0:0] fpu_rst;
 
     //各モジュールからの返り値を受けとるwireを宣言
-    logic [31:0]  fadd_y;
-    logic [31:0]  fsub_y;
-    logic [31:0]  fmul_y;
-    logic [31:0]  fdiv_y;
-    logic [31:0]  fsqrt_y;
-    logic [31:0]  ftoi_y;
-    logic [31:0]  itof_y;
-    logic [31:0]  fabs_y;
-    logic [0:0]   fadd_valid;
-    logic [0:0]   fsub_valid;
-    logic [0:0]   fmul_valid;
-    logic [0:0]   fdiv_valid;
-    logic [0:0]   fsqrt_valid;
-    logic [0:0]   ftoi_valid;
-    logic [0:0]   itof_valid;
-    logic [0:0]   fabs_valid;
+    wire [31:0]  fadd_y;
+    wire [31:0]  fsub_y;
+    wire [31:0]  fmul_y;
+    wire [31:0]  fdiv_y;
+    wire [31:0]  fsqrt_y;
+    wire [31:0]  ftoi_y;
+    wire [31:0]  itof_y;
+    wire [31:0]  fabs_y;
+    wire [31:0]  feq_y;
+    wire [31:0]  fle_y;
+    wire [0:0]   fadd_valid;
+    wire [0:0]   fsub_valid;
+    wire [0:0]   fmul_valid;
+    wire [0:0]   fdiv_valid;
+    wire [0:0]   fsqrt_valid;
+    wire [0:0]   ftoi_valid;
+    wire [0:0]   itof_valid;
+    wire [0:0]   fabs_valid;
+    wire [0:0]   feq_valid;
+    wire [0:0]   fle_valid;
     
-    logic [0:0]   fmul_ovf;
-    logic [0:0]   fmul_unf;
-    logic [0:0]   fdiv_ovf;
-    logic [0:0]   fdiv_unf;
+    wire [0:0]   fmul_ovf;
+    wire [0:0]   fmul_unf;
+    wire [0:0]   fdiv_ovf;
+    wire [0:0]   fdiv_unf;
     
     //各モジュールに接続
     fadd fadd_instance // fmulモジュールのインスタンスを作成
@@ -151,114 +153,107 @@ module fpu_top
         .out_valid(fabs_valid)
     );
     
-    logic [3:0] state;
-    typedef enum {idle, fadd, fsub, fmul, fdiv, fsqrt, ftoi, itof, fabs} FPU_state_type;   //オートマトンの状態：左から順に0,1,2,3
-    // 有限状態の現在の状態と次の状態を保持する
-    FPU_state_type  current_state, next_state;
-    assign state = current_state;
+    feq feq_instance // feqモジュールのインスタンスを作成
+    (
+        .sys_clk(sys_clk),
+        .rstn(rstn),
+        .stage1_valid(opcode[8:8]),
+        .x1(x1),
+        .x2(x2),
+        .y(feq_y),
+        .out_valid(feq_valid)
+    );
     
-    always_comb begin
-        case(current_state)
-            idle : begin
-                if (opcode[0:0])
-                begin
-                    next_state = fadd;
-                end
-                if (opcode[1:1])
-                begin
-                    next_state = fsub;
-                end
-                if (opcode[2:2])
-                begin
-                    next_state = fmul;
-                end
-                if (opcode[3:3])
-                begin
-                    next_state = fdiv;
-                end
-                if (opcode[4:4])
-                begin
-                    next_state = fsqrt;
-                end
-                if (opcode[5:5])
-                begin
-                    next_state = ftoi;
-                end
-                if (opcode[6:6])
-                begin
-                    next_state = itof;
-                end
-                if (opcode[7:7])
-                begin
-                    next_state = fabs;
-                end
-            end
-            fadd : begin
-                if (fadd_valid)
-                begin
-                    next_state = idle;
-                end
-            end
-            fsub : begin
-                if (fsub_valid)
-                begin
-                    next_state = idle;
-                end
-            end
-            fmul : begin
-                if (fmul_valid)
-                begin
-                    next_state = idle;
-                end
-            end
-            fdiv : begin
-                if (fdiv_valid)
-                begin
-                    next_state = idle;
-                end
-            end
-            fsqrt : begin
-                if (fsqrt_valid)
-                begin
-                    next_state = idle;
-                end
-            end
-            ftoi : begin
-                if (ftoi_valid)
-                begin
-                    next_state = idle;
-                end
-            end
-            itof : begin
-                if (itof_valid)
-                begin
-                    next_state = idle;
-                end
-            end
-            fabs : begin
-                if (fabs_valid)
-                begin
-                    next_state = idle;
-                end
-            end
-        endcase
+    fle fle_instance // feqモジュールのインスタンスを作成
+    (
+        .sys_clk(sys_clk),
+        .rstn(rstn),
+        .stage1_valid(opcode[9:9]),
+        .x1(x1),
+        .x2(x2),
+        .y(fle_y),
+        .out_valid(fle_valid)
+    );
+
+
+    
+    reg [3:0] state2;
+    wire [3:0] state;
+    
+    always_ff@ (posedge sys_clk) begin
+      if (~rstn) begin
+        state2 <= 4'd0;
+      end else begin
+        if      (opcode[0]) begin state2 <= 4'd1;    end
+        else if (opcode[1]) begin state2 <= 4'd2;    end
+        else if (opcode[2]) begin state2 <= 4'd3;    end
+        else if (opcode[3]) begin state2 <= 4'd4;    end
+        else if (opcode[4]) begin state2 <= 4'd5;    end
+        else if (opcode[5]) begin state2 <= 4'd6;    end
+        else if (opcode[6]) begin state2 <= 4'd7;    end
+        else if (opcode[7]) begin state2 <= 4'd8;    end
+        else if (opcode[8]) begin state2 <= 4'd9;    end
+        else if (opcode[9]) begin state2 <= 4'd10;   end
+        else                begin state2 <= state2;  end
+      end
     end
+
+    assign state = 
+      (opcode[0]) ? 4'd1  : 
+      (opcode[1]) ? 4'd2  :
+      (opcode[2]) ? 4'd3  :
+      (opcode[3]) ? 4'd4  :
+      (opcode[4]) ? 4'd5  :
+      (opcode[5]) ? 4'd6  :
+      (opcode[6]) ? 4'd7  :
+      (opcode[7]) ? 4'd8  :
+      (opcode[8]) ? 4'd9  :
+      (opcode[9]) ? 4'd10 : state2;
+
+
+
+    assign ovf = 1'b0;
+    assign unf = 1'b0;
+
+
+    reg [31:0] y_reg;
+    wire [31:0] something_y;
+
+    assign something_y =
+      (state == 4'd1)  ? fadd_y  :
+      (state == 4'd2)  ? fsub_y  :
+      (state == 4'd3)  ? fmul_y  :
+      (state == 4'd4)  ? fdiv_y  :
+      (state == 4'd5)  ? fsqrt_y :
+      (state == 4'd6)  ? ftoi_y  :
+      (state == 4'd7)  ? itof_y  :
+      (state == 4'd8)  ? fabs_y  :
+      (state == 4'd9)  ? feq_y   :
+      (state == 4'd10) ? fle_y   : 32'b0;
+
+    assign out_valid =
+      (state == 4'd1)  ? fadd_valid  :
+      (state == 4'd2)  ? fsub_valid  :
+      (state == 4'd3)  ? fmul_valid  :
+      (state == 4'd4)  ? fdiv_valid  :
+      (state == 4'd5)  ? fsqrt_valid :
+      (state == 4'd6)  ? ftoi_valid  :
+      (state == 4'd7)  ? itof_valid  :
+      (state == 4'd8)  ? fabs_valid  :
+      (state == 4'd9)  ? feq_valid   :
+      (state == 4'd10) ? fle_valid   : 1'b0;
     
-    assign {y, out_valid, ovf, unf} = (state == fadd)   ? {fadd_y, fadd_valid, 1'b0, 1'b0}:
-                                      (state == fsub)   ? {fsub_y, fsub_valid, 1'b0, 1'b0}:
-                                      (state == fmul)   ? {fmul_y, fmul_valid, fmul_ovf, fmul_unf}:
-                                      (state == fdiv)   ? {fdiv_y, fdiv_valid, fdiv_ovf, fdiv_unf}:
-                                      (state == fsqrt)  ? {fsqrt_y, fsqrt_valid, 1'b0, 1'b0}:
-                                      (state == ftoi)  ? {ftoi_y, ftoi_valid, 1'b0, 1'b0}:
-                                      (state == itof)  ? {itof_y, itof_valid, 1'b0, 1'b0}:
-                                      (state == fabs)  ? {fabs_y, fabs_valid, 1'b0, 1'b0}:
-                                                         {32'b0 , 1'b0, 1'b0, 1'b0};
     
-    always_ff @(posedge(sys_clk))
-    begin
-        if (~rstn) 
-        current_state <= idle; //reset to idle state
-        else 
-        current_state <= next_state;
+    always_ff@ (posedge sys_clk) begin
+      if (~rstn) begin
+        y_reg <= 32'b0;
+      end else begin
+        if (out_valid) begin
+          y_reg <= something_y;
+        end
+      end
     end
+
+    assign y = (out_valid) ? something_y : y_reg;
+   
 endmodule

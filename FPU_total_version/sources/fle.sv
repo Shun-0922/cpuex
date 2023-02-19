@@ -72,8 +72,8 @@ module fle
            stage12_valid <= 1'b0; //reset to idle state
        end
        else begin 
-          stage12_y_check = y_check;
-          stage12_valid = stage1_valid;
+          stage12_y_check <= y_check;
+          stage12_valid <= stage1_valid;
        end
    end 
 endmodule
