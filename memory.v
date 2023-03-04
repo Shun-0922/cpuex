@@ -190,13 +190,13 @@ module data_ram
   wire clk_dummy;
   wire en_dummy;
   wire we_dummy;
-  wire [15:0] addr_dummy;
+  wire [16:0] addr_dummy;
   wire [31:0] din_dummy;
 
   assign clk_dummy = clk;
   assign en_dummy = 1'b1;
   assign we_dummy = rw_dram;
-  assign addr_dummy = addr_dram[16:1];
+  assign addr_dummy = addr_dram[17:1];
   assign din_dummy = din_dram;
 
 

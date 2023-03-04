@@ -36,7 +36,7 @@ module feq
    reg  [0:0]  stage12_valid;
 
   //Procedure 1
-  assign stage1_y = (x1 == x2) ? 32'hffffffff : 32'b0;
+  assign stage1_y = (x1 == x2) ? 32'h3f800000 : 32'b0;
    
    assign y = stage12_y;
    assign out_valid = stage12_valid;

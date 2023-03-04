@@ -109,7 +109,7 @@ wire [31:0] write_data_memory_ex;
 wire [31:0] write_data_memory_mem;
 wire [31:0] write_data_register_wb;
 
-assign outputs = {16'b0,core_start,core_end,pc_ex[13:2],alu_ready,data_ready_mem};
+assign outputs = {16'b0,core_start,core_end,pc_ex[15:2]};
 assign port_en_1_instr = 1'b1;
 
 // multiplexers etc. out of module

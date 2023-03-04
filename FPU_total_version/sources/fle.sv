@@ -64,7 +64,7 @@ module fle
    reg  [0:0]  stage12_valid;
 
   //STAGE2
-  assign y = stage12_y_check ? 32'hffffffff : 32'h0;
+  assign y = stage12_y_check ? 32'h3f800000 : 32'h0;
   assign out_valid = stage12_valid;
    
    always_ff @ (posedge sys_clk) begin
