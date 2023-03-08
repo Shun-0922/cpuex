@@ -27,7 +27,7 @@ module registerfile
       ((rs2_id == 5'd0)  ? 32'd0 : ((rs2_id == rd_wb && regwrite_wb == 2'b01) ? write_data_register_wb : registers[rs2_id])) : 
       ((rs2_id == 5'd30) ? 32'd0 : ((rs2_id == rd_wb && regwrite_wb == 2'b10) ? write_data_register_wb : fpu_registers[rs2_id]));
                                            
-  assign output_register = registers[6];
+  assign output_register = registers[3];
   
   integer i;
   always @(posedge clk) begin 

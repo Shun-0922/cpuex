@@ -85,8 +85,8 @@ module fpu
   assign fpu_result = y;
   assign fpu_ready = (status1 == 3'd0 || status1 == 3'd3 || status1 == 3'd4);
   assign status1 = 
-    (~alu_control[4]) ? 3'b000 :
     (out_valid) ? 3'b011 :
+    (~alu_control[4]) ? 3'b000 :
     (status2 == 2'b10) ? 3'b100 :
     (status2 == 2'b01) ? 3'b010 : 3'b001;
 
@@ -121,14 +121,14 @@ module fpu
     if (~rstn) begin
       status2 <= 2'b0;
     end else begin
-      if (status2 == 2'b00 && alu_control[4]) begin
-        status2 <= 2'b01;
+      if (out_valid && data_ready_mem) begin
+        status2 <= 2'b00;
       end else if (status2 == 2'b01 && out_valid && ~data_ready_mem) begin
         status2 <= 2'b10;
-      end else if (status2 == 2'b01 && out_valid && data_ready_mem) begin
-        status2 <= 2'b00;
       end else if (status2 == 2'b10 && data_ready_mem) begin
         status2 <= 2'b00;
+      end else if (status2 == 2'b00 && alu_control[4]) begin
+        status2 <= 2'b01;
       end
     end
   end
